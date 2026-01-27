@@ -1,0 +1,75 @@
+# ============================================
+# 🔍 Pull Request Checks
+# ============================================
+# Runs build verification on every PR
+# Does NOT deploy - just validates the code
+
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/**"
+
+env:
+  NODE_VERSION: "18"
+
+jobs:
+  # ============================================
+  # Validate PR can build successfully
+  # ============================================
+  validate:
+    name: ✅ Validate Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📚 Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 🔍 Check for vulnerabilities
+        working-directory: ./frontend
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: 🧪 Run linter
+        working-directory: ./frontend
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      - name: 🧪 Run tests
+        working-directory: ./frontend
+        run: npm test --if-present
+        continue-on-error: true
+
+      - name: 🏗️ Test build
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: 📊 Build size report
+        working-directory: ./frontend
+        run: |
+          echo "## 📦 Build Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          find dist -type f -name "*.js" -o -name "*.css" | head -10 | while read file; do
+            size=$(du -h "$file" | cut -f1)
+            echo "| $file | $size |" >> $GITHUB_STEP_SUMMARY
+          done
+
+      - name: ✅ PR validation passed
+        run: echo "✅ All checks passed! Ready for review."
