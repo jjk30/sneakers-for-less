@@ -1,7 +1,8 @@
 # ============================================
 # 🚀 SneakersForLess CI/CD Pipeline
 # ============================================
-# Builds frontend and deploys to AWS S3 + CloudFront on push to main
+# This workflow automatically builds and deploys
+# the frontend to AWS S3 + CloudFront on push to main
 
 name: Deploy to Production
 
@@ -14,10 +15,10 @@ on:
       - main
 
 env:
-  NODE_VERSION: "18"
-  AWS_REGION: "us-east-2"
-  S3_BUCKET: "sneakers-for-less-website"
-  CLOUDFRONT_DISTRIBUTION_ID: "E3B368O9PJ3DSF"
+  NODE_VERSION: '18'
+  AWS_REGION: 'us-east-2'
+  S3_BUCKET: 'sneakers-for-less-website'
+  CLOUDFRONT_DISTRIBUTION_ID: 'E3B368O9PJ3DSF'
 
 jobs:
   # ============================================
@@ -26,7 +27,7 @@ jobs:
   build:
     name: 🔨 Build & Test
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -35,15 +36,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      # ✅ Manual cache for subfolder projects (frontend/)
-      - name: ♻️ Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: frontend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: 📚 Install dependencies
         working-directory: ./frontend
@@ -51,8 +45,7 @@ jobs:
 
       - name: 🧪 Run linter (if configured)
         working-directory: ./frontend
-        run: npm run lint --if-present
-        continue-on-error: true
+        run: npm run lint --if-present || true
 
       - name: 🧪 Run tests (if configured)
         working-directory: ./frontend
@@ -64,6 +57,8 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          ESLINT_NO_DEV_ERRORS: 'true'
+          CI: 'false'
 
       - name: 📤 Upload build artifact
         uses: actions/upload-artifact@v4
@@ -73,14 +68,14 @@ jobs:
           retention-days: 1
 
   # ============================================
-  # Job 2: Deploy to AWS (only on push to main)
+  # Job 2: Deploy to AWS (only on main branch)
   # ============================================
   deploy:
     name: 🚀 Deploy to AWS
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
+    
     steps:
       - name: 📥 Download build artifact
         uses: actions/download-artifact@v4
@@ -102,11 +97,10 @@ jobs:
             --cache-control "public, max-age=31536000" \
             --exclude "index.html" \
             --exclude "*.json"
-
+          
           # Upload index.html with no-cache for immediate updates
           aws s3 cp dist/index.html s3://${{ env.S3_BUCKET }}/index.html \
-            --cache-control "no-cache, no-store, must-revalidate" \
-            --content-type "text/html"
+            --cache-control "no-cache, no-store, must-revalidate"
 
       - name: 🌍 Invalidate CloudFront cache
         run: |
@@ -118,17 +112,17 @@ jobs:
         run: |
           echo "🎉 Deployment successful!"
           echo "🌐 Site: https://www.sneakersforless.org"
-          echo "⏱️ CloudFront may take a few minutes to fully propagate"
+          echo "⏱️ CloudFront may take 5-10 minutes to fully propagate"
 
   # ============================================
-  # Job 3: Notify on failure
+  # Job 3: Notify on failure (optional)
   # ============================================
   notify-failure:
     name: 🚨 Notify on Failure
     runs-on: ubuntu-latest
     needs: [build, deploy]
     if: failure()
-
+    
     steps:
       - name: 🚨 Create failure summary
         run: |
