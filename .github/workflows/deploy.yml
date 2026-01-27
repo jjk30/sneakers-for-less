@@ -1,8 +1,7 @@
 # ============================================
 # 🚀 SneakersForLess CI/CD Pipeline
 # ============================================
-# This workflow automatically builds and deploys
-# the frontend to AWS S3 + CloudFront on push to main
+# Builds frontend and deploys to AWS S3 + CloudFront on push to main
 
 name: Deploy to Production
 
@@ -36,8 +35,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+
+      # ✅ Manual cache for subfolder projects (frontend/)
+      - name: ♻️ Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: 📚 Install dependencies
         working-directory: ./frontend
@@ -67,7 +73,7 @@ jobs:
           retention-days: 1
 
   # ============================================
-  # Job 2: Deploy to AWS (only on main branch)
+  # Job 2: Deploy to AWS (only on push to main)
   # ============================================
   deploy:
     name: 🚀 Deploy to AWS
@@ -99,7 +105,8 @@ jobs:
 
           # Upload index.html with no-cache for immediate updates
           aws s3 cp dist/index.html s3://${{ env.S3_BUCKET }}/index.html \
-            --cache-control "no-cache, no-store, must-revalidate"
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html"
 
       - name: 🌍 Invalidate CloudFront cache
         run: |
@@ -111,10 +118,10 @@ jobs:
         run: |
           echo "🎉 Deployment successful!"
           echo "🌐 Site: https://www.sneakersforless.org"
-          echo "⏱️ CloudFront may take 5-10 minutes to fully propagate"
+          echo "⏱️ CloudFront may take a few minutes to fully propagate"
 
   # ============================================
-  # Job 3: Notify on failure (optional)
+  # Job 3: Notify on failure
   # ============================================
   notify-failure:
     name: 🚨 Notify on Failure
