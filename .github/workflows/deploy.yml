@@ -15,10 +15,10 @@ on:
       - main
 
 env:
-  NODE_VERSION: '18'
-  AWS_REGION: 'us-east-2'
-  S3_BUCKET: 'sneakers-for-less-website'
-  CLOUDFRONT_DISTRIBUTION_ID: 'E3B368O9PJ3DSF'
+  NODE_VERSION: "20"
+  AWS_REGION: "us-east-2"
+  S3_BUCKET: "sneakers-for-less-website"
+  CLOUDFRONT_DISTRIBUTION_ID: "E3B368O9PJ3DSF"
 
 jobs:
   # ============================================
@@ -27,7 +27,7 @@ jobs:
   build:
     name: 🔨 Build & Test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: 📚 Install dependencies
@@ -57,8 +57,8 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          ESLINT_NO_DEV_ERRORS: 'true'
-          CI: 'false'
+          ESLINT_NO_DEV_ERRORS: "true"
+          CI: "false"
 
       - name: 📤 Upload build artifact
         uses: actions/upload-artifact@v4
@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
       - name: 📥 Download build artifact
         uses: actions/download-artifact@v4
@@ -97,7 +97,7 @@ jobs:
             --cache-control "public, max-age=31536000" \
             --exclude "index.html" \
             --exclude "*.json"
-          
+
           # Upload index.html with no-cache for immediate updates
           aws s3 cp dist/index.html s3://${{ env.S3_BUCKET }}/index.html \
             --cache-control "no-cache, no-store, must-revalidate"
@@ -122,7 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, deploy]
     if: failure()
-    
+
     steps:
       - name: 🚨 Create failure summary
         run: |
