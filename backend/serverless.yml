@@ -1,0 +1,26 @@
+service: sneakers-for-less-api
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-2
+  memorySize: 256
+  timeout: 30
+
+functions:
+  api:
+    handler: main.handler
+    events:
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
+      - httpApi:
+          path: /
+          method: ANY
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: false
