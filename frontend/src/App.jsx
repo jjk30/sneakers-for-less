@@ -116,7 +116,7 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/api/deals?limit=8`)
       if (response.ok) { const data = await response.json(); setHotDeals(data.deals || []) }
-    } catch { console.error('Failed to fetch deals:', err) }
+    } catch (e) { console.error('Failed to fetch deals:', e) }
     finally { setDealsLoading(false) }
   }
 
@@ -124,7 +124,7 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/api/user/data?email=${encodeURIComponent(email)}`)
       if (res.ok) { const data = await res.json(); setFavorites(data.favorites || []); setPriceAlerts(data.priceAlerts || []) }
-    } catch { console.error('Failed to load user data:', err) }
+    } catch (e) { console.error('Failed to load user data:', e) }
   }
 
   const resetToHome = () => { setSelectedCategory(''); setSelectedBrand(''); setHasSearched(false); setSneakerInfo(null); setAllProducts([]); setResults([]); setSearchQuery(''); setShowProfile(false) }
@@ -153,13 +153,13 @@ function App() {
   const restoreProduct = async (productId) => {
     setLoading(true); setHasSearched(true); setShowProfile(false)
     try { const response = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(productId)}`); if (!response.ok) throw new Error(); const data = await response.json(); setResults(data.results || []); setSneakerInfo(data); setAllProducts([]); setSearchQuery(productId) }
-    catch { console.error('Product fetch error:', err) }
+    catch (e) { console.error('Product fetch error:', e) }
     finally { setLoading(false) }
   }
 
   const fetchInitialData = async () => {
     try { const response = await fetch(`${API_URL}/`); const data = await response.json(); setCategories(data.categories || []); setBrands(data.brands || []) }
-    catch { console.error('Failed to fetch initial data:', err) }
+    catch (e) { console.error('Failed to fetch initial data:', e) }
   }
 
   const handleSearch = async () => {
@@ -201,7 +201,7 @@ function App() {
     setLoading(true); setHasSearched(true); setShowProfile(false); setSelectedCategory(''); setSelectedBrand(''); setAllProducts([])
     window.history.pushState({ product: productId }, '', `?product=${encodeURIComponent(productId)}`)
     try { const response = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(productId)}`); if (!response.ok) throw new Error(); const data = await response.json(); setResults(data.results || []); setSneakerInfo(data); setSearchQuery(data.name || productId) }
-    catch { console.error('Product fetch error:', err) }
+    catch (e) { console.error('Product fetch error:', e) }
     finally { setLoading(false) }
   }
 
@@ -211,7 +211,7 @@ function App() {
     if (!authEmail || !authPassword) { setAuthError('Email and password required'); return }
     setAuthLoading(true); setAuthError('')
     try { await signInWithEmailAndPassword(auth, authEmail, authPassword) }
-    catch { setAuthError(err?.message || 'Login failed') }
+    catch (e) { setAuthError(e?.message || 'Login failed') }
     finally { setAuthLoading(false) }
   }
 
@@ -221,7 +221,7 @@ function App() {
     if (authPassword !== authConfirm) { setAuthError('Passwords do not match'); return }
     setAuthLoading(true); setAuthError('')
     try { await createUserWithEmailAndPassword(auth, authEmail, authPassword); setAuthSuccess('Account created!') }
-    catch { setAuthError(err?.message || 'Registration failed') }
+    catch (e) { setAuthError(e?.message || 'Registration failed') }
     finally { setAuthLoading(false) }
   }
 
@@ -238,7 +238,7 @@ function App() {
   const handleGoogleSignIn = async () => {
     setAuthLoading(true); setAuthError('')
     try { const provider = new GoogleAuthProvider(); await signInWithPopup(auth, provider) }
-    catch { setAuthError(err?.message || 'Google sign-in failed') }
+    catch (e) { setAuthError(e?.message || 'Google sign-in failed') }
     finally { setAuthLoading(false) }
   }
 
@@ -248,7 +248,7 @@ function App() {
     const newFavorites = isFav ? favorites.filter(f => f.id !== product.id) : [...favorites, { id: product.id, name: product.name, brand: product.brand, image: product.image, lowest_price: product.lowest_price || results[0]?.price, addedAt: new Date().toISOString() }]
     setFavorites(newFavorites)
     try { await fetch(`${API_URL}/api/user/favorites`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, favorites: newFavorites }) }) }
-    catch { console.error('Failed to save favorites:', err) }
+    catch (e) { console.error('Failed to save favorites:', e) }
   }
 
   const isFavorite = (productId) => favorites.some(f => f.id === productId)
@@ -259,14 +259,14 @@ function App() {
     const newAlerts = [...priceAlerts.filter(a => a.id !== product.id), newAlert]
     setPriceAlerts(newAlerts)
     try { await fetch(`${API_URL}/api/user/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, alerts: newAlerts }) }) }
-    catch { console.error('Failed to save alert:', err) }
+    catch (e) { console.error('Failed to save alert:', e) }
   }
 
   const removePriceAlert = async (productId) => {
     const newAlerts = priceAlerts.filter(a => a.id !== productId)
     setPriceAlerts(newAlerts)
     try { await fetch(`${API_URL}/api/user/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, alerts: newAlerts }) }) }
-    catch { console.error('Failed to remove alert:', err) }
+    catch (e) { console.error('Failed to remove alert:', e) }
   }
 
   const openProfile = () => { setShowProfile(true); setHasSearched(false) }
