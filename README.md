@@ -10,4 +10,4 @@ Find the cheapest sneaker prices across varoius websites like StockX, GOAT, eBay
 
 ## Status
 
-not done yet
+Deployed and live! Enjoy shopping sneakers at an affordable price!
