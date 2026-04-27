@@ -1,3 +1,4 @@
+import os
 import json
 import boto3
 import hashlib
@@ -582,27 +583,19 @@ def handler(event, context):
         # ADMIN - Add/Update Product
         # ============================================
         if path == '/api/admin/product' and http_method == 'POST':
-            body = event.get('body', '{}')
-            product_data = json.loads(body) if isinstance(body, str) else body
-            
-            if not product_data.get('id') or not product_data.get('name'):
-                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'Product ID and name required'})}
-            
-            if add_or_update_product(product_data):
-                return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'success': True})}
-            return {'statusCode': 500, 'headers': headers, 'body': json.dumps({'error': 'Failed to save'})}
+            provided_secret = (event.get('headers') or {}).get('x-admin-secret') or (event.get('headers') or {}).get('X-Admin-Secret', '')
+            expected_secret = os.environ.get('ADMIN_SECRET', '')
+            if not expected_secret or provided_secret != expected_secret:
+                return {'statusCode': 401, 'headers': headers, 'body': json.dumps({'error': 'Unauthorized'})}
         
         # ============================================
         # ADMIN - Delete Product
         # ============================================
         if path == '/api/admin/product' and http_method == 'DELETE':
-            product_id = query_params.get('id')
-            if not product_id:
-                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'Product ID required'})}
-            
-            if delete_product(product_id):
-                return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'success': True})}
-            return {'statusCode': 500, 'headers': headers, 'body': json.dumps({'error': 'Failed to delete'})}
+           provided_secret = (event.get('headers') or {}).get('x-admin-secret') or (event.get('headers') or {}).get('X-Admin-Secret', '')
+           expected_secret = os.environ.get('ADMIN_SECRET', '')
+           if not expected_secret or provided_secret != expected_secret:
+               return {'statusCode': 401, 'headers': headers, 'body': json.dumps({'error': 'Unauthorized'})}
         
         # ============================================
         # CACHE STATS - Debug endpoint
