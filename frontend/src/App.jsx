@@ -47,6 +47,7 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedBrand, setSelectedBrand] = useState('')
   const [allProducts, setAllProducts] = useState([])
+  const [sortBy, setSortBy] = useState('price-asc')
   const [showFilters, setShowFilters] = useState(false)
   const [historyInitialized, setHistoryInitialized] = useState(false)
   
@@ -271,6 +272,14 @@ function App() {
 
   const openProfile = () => { setShowProfile(true); setHasSearched(false) }
 
+  const sortProducts = (products) => {
+    const arr = [...products]
+    if (sortBy === 'price-asc') arr.sort((a, b) => (a.lowest_price ?? Infinity) - (b.lowest_price ?? Infinity))
+    else if (sortBy === 'price-desc') arr.sort((a, b) => (b.lowest_price ?? -Infinity) - (a.lowest_price ?? -Infinity))
+    else if (sortBy === 'brand-asc') arr.sort((a, b) => (a.brand || '').localeCompare(b.brand || ''))
+    return arr
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -444,9 +453,19 @@ function App() {
                   <div className="loading"><div className="spinner"></div><p>Finding the best prices...</p></div>
                 ) : allProducts.length > 0 ? (
                   <div className="products-grid">
-                    <h3 className="grid-title">{allProducts.length} products found</h3>
+                    <div className="grid-header">
+                      <h3 className="grid-title">{allProducts.length} products found</h3>
+                      <div className="sort-control">
+                        <label htmlFor="sort-select">Sort by:</label>
+                        <select id="sort-select" className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                          <option value="price-asc">Price: Low to High</option>
+                          <option value="price-desc">Price: High to Low</option>
+                          <option value="brand-asc">Brand (A-Z)</option>
+                        </select>
+                      </div>
+                    </div>
                     <div className="grid">
-                      {allProducts.map((product) => (
+                      {sortProducts(allProducts).map((product) => (
                         <div key={product.id} className="product-card">
                           <button className={`fav-heart ${isFavorite(product.id) ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleFavorite(product); }}>{isFavorite(product.id) ? '❤️' : '🤍'}</button>
                           {product.discount_percent > 0 && <div className="discount-badge">-{product.discount_percent}%</div>}
