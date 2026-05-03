@@ -301,6 +301,60 @@ body {
   font-weight: 500;
 }
 
+.grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.grid-header .grid-title {
+  margin-bottom: 0;
+  text-align: left;
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.sort-control label {
+  color: #888;
+  font-weight: 500;
+}
+
+.sort-select {
+  background: rgba(20, 20, 20, 0.9);
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.sort-select:hover {
+  border-color: #ff8c00;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #ff8c00;
+  box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.2);
+}
+
+.sort-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
