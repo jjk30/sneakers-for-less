@@ -278,7 +278,8 @@ function App() {
 
   const loadUserData = async (email) => {
     try {
-      const res = await fetch(`${API_URL}/api/user/data?email=${encodeURIComponent(email)}`)
+      const token = await auth.currentUser?.getIdToken()
+      const res = await fetch(`${API_URL}/api/user/data?email=${encodeURIComponent(email)}`, { headers: { Authorization: `Bearer ${token}` } })
       if (res.ok) { const data = await res.json(); setFavorites(data.favorites || []); setPriceAlerts(data.priceAlerts || []) }
     } catch (e) { console.error('Failed to load user data:', e) }
   }
@@ -447,7 +448,7 @@ function App() {
     const isFav = favorites.some(f => f.id === product.id)
     const newFavorites = isFav ? favorites.filter(f => f.id !== product.id) : [...favorites, { id: product.id, name: product.name, brand: product.brand, image: product.image, lowest_price: product.lowest_price || results[0]?.price, addedAt: new Date().toISOString() }]
     setFavorites(newFavorites)
-    try { await fetch(`${API_URL}/api/user/favorites`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, favorites: newFavorites }) }) }
+    try { const token = await auth.currentUser?.getIdToken(); await fetch(`${API_URL}/api/user/favorites`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email: user.email, favorites: newFavorites }) }) }
     catch (e) { console.error('Failed to save favorites:', e) }
   }
 
@@ -458,14 +459,14 @@ function App() {
     const newAlert = { id: product.id, name: product.name, image: product.image, currentPrice: product.lowest_price || results[0]?.price, targetPrice, createdAt: new Date().toISOString() }
     const newAlerts = [...priceAlerts.filter(a => a.id !== product.id), newAlert]
     setPriceAlerts(newAlerts)
-    try { await fetch(`${API_URL}/api/user/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, alerts: newAlerts }) }) }
+    try { const token = await auth.currentUser?.getIdToken(); await fetch(`${API_URL}/api/user/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email: user.email, alerts: newAlerts }) }) }
     catch (e) { console.error('Failed to save alert:', e) }
   }
 
   const removePriceAlert = async (productId) => {
     const newAlerts = priceAlerts.filter(a => a.id !== productId)
     setPriceAlerts(newAlerts)
-    try { await fetch(`${API_URL}/api/user/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, alerts: newAlerts }) }) }
+    try { const token = await auth.currentUser?.getIdToken(); await fetch(`${API_URL}/api/user/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email: user.email, alerts: newAlerts }) }) }
     catch (e) { console.error('Failed to remove alert:', e) }
   }
 
