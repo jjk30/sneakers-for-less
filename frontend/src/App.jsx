@@ -443,6 +443,7 @@ function App() {
             <div className="flex w-full items-center gap-2 lg:w-auto">
               <input
                 type="text"
+                autoComplete="off"
                 placeholder="Search sneakers, brands, or styles..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -480,10 +481,10 @@ function App() {
 
             <div className="auth-divider"><span>or continue with email</span></div>
 
-            <input type="email" placeholder="Email address" value={authEmail} onChange={e => setAuthEmail(e.target.value)} onKeyPress={e => e.key === 'Enter' && (authMode === 'login' ? handleLogin() : null)} />
+            <input type="email" autoComplete="username" placeholder="Email address" value={authEmail} onChange={e => setAuthEmail(e.target.value)} onKeyPress={e => e.key === 'Enter' && (authMode === 'login' ? handleLogin() : null)} />
 
             <div className="password-input-container">
-              <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} onKeyPress={e => e.key === 'Enter' && (authMode === 'login' ? handleLogin() : null)} />
+              <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} onKeyPress={e => e.key === 'Enter' && (authMode === 'login' ? handleLogin() : null)} />
               <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
                 {showPassword ? (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -501,7 +502,7 @@ function App() {
 
             {authMode === 'register' && (
               <div className="password-input-container">
-                <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm Password" value={authConfirm} onChange={e => setAuthConfirm(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleRegister()} />
+                <input type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Confirm Password" value={authConfirm} onChange={e => setAuthConfirm(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleRegister()} />
                 <button type="button" className="password-toggle" onClick={() => setShowConfirmPassword(!showConfirmPassword)} tabIndex={-1}>
                   {showConfirmPassword ? (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
