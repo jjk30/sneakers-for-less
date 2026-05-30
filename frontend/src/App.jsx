@@ -35,6 +35,109 @@ const BRAND_LOGOS = [
   { name: 'Converse', logo: 'https://www.logo.wine/a/logo/Converse_(shoe_company)/Converse_(shoe_company)-Logo.wine.svg' }
 ]
 
+function ProductCard({ product, isFav, onToggleFavorite, onCompare }) {
+  const [imgLoaded, setImgLoaded] = useState(false)
+  const [imgError, setImgError] = useState(false)
+
+  return (
+    <div className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 transition duration-200 hover:-translate-y-1 hover:border-orange-500/60 hover:shadow-lg hover:shadow-black/40">
+      {/* Image area — fixed square, white bg, contain, padded */}
+      <div className="relative">
+        <div className="relative aspect-square w-full cursor-pointer bg-white p-5" onClick={onCompare}>
+          {!imgLoaded && !imgError && (
+            <div className="absolute inset-0 animate-pulse bg-neutral-200" />
+          )}
+          {!imgError && product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              loading="lazy"
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
+              className={`h-full w-full object-contain transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <svg viewBox="0 0 24 24" className="h-12 w-12 text-neutral-300" fill="currentColor" aria-hidden="true">
+                <path d="M2 18h20a1 1 0 0 0 1-1v-1.2a2 2 0 0 0-1.45-1.92l-5.34-1.53a3 3 0 0 1-1.2-.7l-2.6-2.5a1 1 0 0 0-1.4 0l-1.1 1.07 1.6 1.55a.75.75 0 1 1-1.04 1.08L7.4 11.8l-1 .98 1.6 1.55a.75.75 0 1 1-1.04 1.07L5.3 13.8l-1.4 1.37A3 3 0 0 1 2 16v2z" />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        {/* discount pill — top-left (guarded) */}
+        {product.discount_percent > 0 && (
+          <span className="absolute left-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-bold text-white shadow">
+            -{product.discount_percent}%
+          </span>
+        )}
+
+        {/* wishlist heart — top-right, wired to existing toggleFavorite */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
+          aria-label={isFav ? 'Remove from wishlist' : 'Add to wishlist'}
+          className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur transition ${
+            isFav
+              ? 'border-orange-500 bg-orange-500/90 text-white'
+              : 'border-white/20 bg-black/40 text-white/80 hover:border-white/40 hover:text-white'
+          }`}
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill={isFav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Info */}
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <span className="text-xs font-semibold uppercase tracking-wider text-orange-500">{product.brand}</span>
+        <h4 onClick={onCompare} className="line-clamp-2 min-h-[2.5rem] cursor-pointer text-sm font-bold leading-snug text-white">
+          {product.name}
+        </h4>
+
+        {/* price row */}
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <span className="text-lg font-bold text-white">${product.lowest_price}</span>
+          {product.retail_price > product.lowest_price && (
+            <span className="text-sm text-neutral-500 line-through">${product.retail_price}</span>
+          )}
+          {/* "Save $X" — optional: only when a dollar discount is actually present */}
+          {product.discount > 0 && (
+            <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-400">
+              Save ${product.discount}
+            </span>
+          )}
+        </div>
+
+        {/* meta badges: Pre-Owned (neutral, only when applicable) + Verified */}
+        <div className="flex items-center gap-2 text-xs">
+          {product.condition === 'pre-owned' && (
+            <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 font-medium text-neutral-300">
+              Pre-Owned
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-neutral-400">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            Verified
+          </span>
+        </div>
+
+        {/* full-width outline Compare — existing selectProduct flow */}
+        <button
+          type="button"
+          onClick={onCompare}
+          className="mt-2 w-full rounded-lg border border-orange-500/70 py-2 text-sm font-semibold text-orange-400 transition hover:bg-orange-500 hover:text-white"
+        >
+          Compare
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [results, setResults] = useState([])
@@ -466,19 +569,13 @@ function App() {
                     </div>
                     <div className="grid">
                       {sortProducts(allProducts).map((product) => (
-                        <div key={product.id} className="product-card">
-                          <button className={`fav-heart ${isFavorite(product.id) ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleFavorite(product); }}>{isFavorite(product.id) ? '❤️' : '🤍'}</button>
-                          {product.discount_percent > 0 && <div className="discount-badge">-{product.discount_percent}%</div>}
-                          <div onClick={() => selectProduct(product.id)}>
-                            {product.image && <img src={product.image} alt={product.name} className="product-image" loading="lazy" />}
-                            <div className="product-info">
-                              <span className="product-brand">{product.brand}</span>
-                              <h4 className="product-name">{product.name}</h4>
-                              <div className="product-prices"><span className="lowest-price">${product.lowest_price}</span>{product.retail_price && product.retail_price > product.lowest_price && <span className="retail-price">${product.retail_price}</span>}</div>
-                              {product.condition === 'pre-owned' && <span className="condition-badge">Pre-Owned</span>}
-                            </div>
-                          </div>
-                        </div>
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          isFav={isFavorite(product.id)}
+                          onToggleFavorite={() => toggleFavorite(product)}
+                          onCompare={() => selectProduct(product.id)}
+                        />
                       ))}
                     </div>
                   </div>
@@ -535,17 +632,13 @@ function App() {
                   ) : hotDeals.length > 0 ? (
                     <div className="deals-grid">
                       {hotDeals.map((deal) => (
-                        <div key={deal.id} className="deal-card" onClick={() => selectProduct(deal.id)}>
-                          <div className="deal-discount-badge">-{deal.discount_percent}%</div>
-                          <button className={`fav-heart ${isFavorite(deal.id) ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleFavorite(deal); }}>{isFavorite(deal.id) ? '❤️' : '🤍'}</button>
-                          {deal.image && <img src={deal.image} alt={deal.name} className="deal-image" loading="lazy" />}
-                          <div className="deal-info">
-                            <span className="deal-brand">{deal.brand}</span>
-                            <h4 className="deal-name">{deal.name}</h4>
-                            <div className="deal-prices"><span className="deal-current-price">${deal.lowest_price}</span><span className="deal-original-price">${deal.retail_price}</span></div>
-                            <div className="deal-savings">Save ${deal.discount}</div>
-                          </div>
-                        </div>
+                        <ProductCard
+                          key={deal.id}
+                          product={deal}
+                          isFav={isFavorite(deal.id)}
+                          onToggleFavorite={() => toggleFavorite(deal)}
+                          onCompare={() => selectProduct(deal.id)}
+                        />
                       ))}
                     </div>
                   ) : (
