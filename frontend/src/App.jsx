@@ -386,7 +386,14 @@ function App() {
 
   const handleLogout = async () => {
     try { await signOut(auth) } catch (e) { console.error(e) }
-    setUser(null); setFavorites([]); setPriceAlerts([]); localStorage.removeItem('sneakersUser'); setShowProfile(false)
+    setUser(null); setFavorites([]); setPriceAlerts([]); localStorage.removeItem('sneakersUser')
+    // Always land on a clean home view, regardless of where logout was triggered
+    // (brand, category, search, product detail, or My Account).
+    resetToHome()                 // clears brand, category, search, hasSearched, results, allProducts, sneakerInfo, showProfile
+    setProfileTab('favorites')    // reset the account sub-tab
+    setError(null)
+    window.history.replaceState({ page: 'home', isBase: true }, '', window.location.pathname)  // clear URL query (?product/?category/?brand/?search/?view/?tab)
+    window.scrollTo(0, 0)
   }
 
   // Sign out with a ~3s UX overlay: spinner -> green check. The real signOut still runs.
