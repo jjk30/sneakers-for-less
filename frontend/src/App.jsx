@@ -151,7 +151,6 @@ function App() {
   const [selectedBrand, setSelectedBrand] = useState('')
   const [allProducts, setAllProducts] = useState([])
   const [sortBy, setSortBy] = useState('price-asc')
-  const [showFilters, setShowFilters] = useState(false)
   const [historyInitialized, setHistoryInitialized] = useState(false)
   
   const [hotDeals, setHotDeals] = useState([])
@@ -385,22 +384,80 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <div className="header-content">
-          <h1 className="logo" onClick={goHome}><span className="logo-icon">👟</span>SNEAKERS<span className="logo-accent">FORLESS</span></h1>
-          <div className="header-right">
-            {user ? (
-              <div className="user-menu">
-                <button className="user-btn" onClick={openProfile}><span className="user-icon">👤</span><span className="user-email-short">{user.email.split('@')[0]}</span></button>
-                <button className="fav-btn" onClick={openProfile}>❤️ {favorites.length}</button>
-                <button className="logout-btn-small" onClick={handleLogout}>Logout</button>
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-neutral-950/95 backdrop-blur">
+        {/* Row 1: logo + auth */}
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+          <button type="button" onClick={goHome} className="flex items-center gap-2 text-xl font-extrabold tracking-tight">
+            <span className="text-2xl" aria-hidden="true">👟</span>
+            <span className="text-orange-500">SNEAKERS</span>
+            <span className="text-white">FOR LESS</span>
+          </button>
+
+          {user ? (
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={openProfile} className="flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/90 transition hover:border-white/30">
+                <span aria-hidden="true">👤</span><span className="hidden sm:inline">{user.email.split('@')[0]}</span>
+              </button>
+              <button type="button" onClick={openProfile} className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white/90 transition hover:border-white/30">❤️ {favorites.length}</button>
+              <button type="button" onClick={handleLogout} className="rounded-lg px-3 py-2 text-sm text-neutral-400 transition hover:text-white">Logout</button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setShowAuthModal(true)} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
+              Login / Sign Up
+            </button>
+          )}
+        </div>
+
+        {/* Row 2: nav + search */}
+        <div className="border-t border-white/10">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+            <nav className="flex flex-wrap items-center gap-1">
+              {/* Categories — CSS-only dropdown, reuses categories + browseByCategory */}
+              <div className="group relative">
+                <button type="button" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">
+                  Categories
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+                </button>
+                <div className="invisible absolute left-0 top-full z-50 mt-1 max-h-80 w-56 overflow-auto rounded-xl border border-white/10 bg-neutral-900 p-1 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                  {categories.map((cat) => (
+                    <button key={cat} type="button" onClick={() => browseByCategory(cat)} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-neutral-300 transition hover:bg-orange-500 hover:text-white">{cat}</button>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <button className="login-btn" onClick={() => setShowAuthModal(true)}>Login / Sign Up</button>
-            )}
+
+              {/* Brands — CSS-only dropdown, reuses brands + browseByBrand */}
+              <div className="group relative">
+                <button type="button" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">
+                  Brands
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+                </button>
+                <div className="invisible absolute left-0 top-full z-50 mt-1 max-h-80 w-56 overflow-auto rounded-xl border border-white/10 bg-neutral-900 p-1 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                  {brands.map((brand) => (
+                    <button key={brand} type="button" onClick={() => browseByBrand(brand)} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-neutral-300 transition hover:bg-orange-500 hover:text-white">{brand}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Deals — existing return-to-homepage/hot-deals handler */}
+              <button type="button" onClick={goHome} className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">Deals</button>
+            </nav>
+
+            {/* Search — reuses searchQuery + handleSearch + handleKeyPress */}
+            <div className="flex w-full items-center gap-2 lg:w-auto">
+              <input
+                type="text"
+                placeholder="Search sneakers, brands, or styles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-neutral-500 focus:border-orange-500 focus:outline-none lg:w-72"
+              />
+              <button type="button" onClick={handleSearch} className="shrink-0 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
+                {loading ? 'Searching...' : 'Search'}
+              </button>
+            </div>
           </div>
         </div>
-        <p className="tagline">Compare prices across 70+ sneakers from top brands</p>
       </header>
 
       {showAuthModal && (
@@ -533,17 +590,6 @@ function App() {
         {!showProfile && (
           <>
             <div className="search-container">
-              <div className="search-box">
-                <input type="text" placeholder="Search sneakers, brands, or styles..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleKeyPress} className="search-input" />
-                <button onClick={handleSearch} className="search-btn">{loading ? 'Searching...' : 'Find Deals'}</button>
-              </div>
-              <button className="filter-toggle" onClick={() => setShowFilters(!showFilters)}>{showFilters ? 'Hide Filters' : 'Show Filters'}</button>
-              {showFilters && (
-                <div className="filters-section">
-                  <div className="filter-group"><h4>Categories</h4><div className="filter-tags">{categories.map((cat) => (<button key={cat} onClick={() => browseByCategory(cat)} className={`filter-tag ${selectedCategory === cat ? 'active' : ''}`}>{cat}</button>))}</div></div>
-                  <div className="filter-group"><h4>Brands</h4><div className="filter-tags">{brands.map((brand) => (<button key={brand} onClick={() => browseByBrand(brand)} className={`filter-tag ${selectedBrand === brand ? 'active' : ''}`}>{brand}</button>))}</div></div>
-                </div>
-              )}
               <div className="quick-tags"><span className="quick-label">Popular:</span>{['Jordan 1', 'Dunk Low', 'Yeezy 350', 'Travis Scott', 'Air Max 95', 'Air Force 1'].map((tag) => (<button key={tag} onClick={() => quickSearch(tag)} className="tag">{tag}</button>))}</div>
             </div>
 
