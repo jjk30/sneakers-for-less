@@ -479,6 +479,11 @@ function App() {
     return arr
   }
 
+  // A single-product detail/compare view is open (sneakerInfo + store results, not a grid)
+  // AND the URL says it's a product page (?product=) rather than a search — used only to
+  // hide the hero/search block there. Search and grid results keep the hero.
+  const onProductDetail = !!sneakerInfo && results.length > 0 && allProducts.length === 0 && new URLSearchParams(window.location.search).has('product')
+
   return (
     <div className="app bg-[#0a0a0b] text-[#f4f4f5]">
       <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#0a0a0b]/95 backdrop-blur">
@@ -721,6 +726,7 @@ function App() {
       <main className="main">
         {!showProfile && (
           <>
+            {!onProductDetail && (
             <section className={`mx-auto w-full max-w-2xl px-6 text-center ${hasSearched ? 'py-6' : 'py-12 sm:py-16'}`}>
               {!hasSearched && (
                 <>
@@ -760,6 +766,7 @@ function App() {
                 ))}
               </div>
             </section>
+            )}
 
             {error && <div className="error-message"><p>{error}</p></div>}
             {(selectedCategory || selectedBrand) && (
