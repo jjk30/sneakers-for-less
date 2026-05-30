@@ -218,7 +218,11 @@ function App() {
 
     const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userData = { email: firebaseUser.email }
+        const userData = {
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          photo: firebaseUser.photoURL,
+        }
         setUser(userData)
         localStorage.setItem('sneakersUser', JSON.stringify(userData))
         loadUserData(userData.email)
@@ -414,11 +418,35 @@ function App() {
 
           {user ? (
             <div className="flex items-center gap-2">
-              <button type="button" onClick={openProfile} className="flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/90 transition hover:border-white/30">
-                <span aria-hidden="true">👤</span><span className="hidden sm:inline">{user.email.split('@')[0]}</span>
+              {/* a) Wishlist pill */}
+              <button type="button" onClick={openProfile} aria-label="Wishlist" className="flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-sm text-white/90 transition hover:border-white/30">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                <span>Wishlist</span>
+                <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold leading-5 text-white">{favorites.length}</span>
               </button>
-              <button type="button" onClick={openProfile} className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white/90 transition hover:border-white/30">❤️ {favorites.length}</button>
-              <button type="button" onClick={handleLogout} className="rounded-lg px-3 py-2 text-sm text-neutral-400 transition hover:text-white">Logout</button>
+
+              {/* b) Account chip — avatar (photo or initials fallback) + first name */}
+              <button type="button" onClick={openProfile} className="flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-3 text-sm text-white/90 transition hover:border-white/30">
+                <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-500 text-[11px] font-bold uppercase leading-none text-white">
+                  {(user.name ? user.name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') : user.email.split('@')[0].slice(0, 2)).toUpperCase()}
+                  {user.photo && (
+                    <img src={user.photo} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none' }} className="absolute inset-0 h-full w-full rounded-full object-cover" />
+                  )}
+                </span>
+                <span className="hidden sm:inline">{user.name ? user.name.trim().split(/\s+/)[0] : user.email.split('@')[0]}</span>
+              </button>
+
+              {/* c) Log out ghost button */}
+              <button type="button" onClick={handleLogout} className="flex items-center gap-2 rounded-full px-3 py-2 text-sm text-neutral-400 transition hover:text-white">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Log out</span>
+              </button>
             </div>
           ) : (
             <button type="button" onClick={() => setShowAuthModal(true)} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
