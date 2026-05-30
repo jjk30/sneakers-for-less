@@ -921,8 +921,10 @@ function App() {
                   <h2 className="mb-5 text-[20px] font-medium text-[#f4f4f5]">Popular Brands</h2>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
                     {BRAND_LOGOS.map((brand) => (
-                      <button key={brand.name} type="button" onClick={() => browseByBrand(brand.name)} className="flex flex-col items-center gap-2 rounded-[12px] border border-white/[0.08] bg-[#141416] p-4 transition hover:border-white/[0.14]">
-                        <img src={brand.logo} alt={brand.name} loading="lazy" className="h-10 w-full object-contain" />
+                      <button key={brand.name} type="button" onClick={() => browseByBrand(brand.name)} className="flex flex-col items-center gap-2 rounded-[12px] border border-white/[0.08] bg-[#141416] p-3 transition hover:border-white/[0.14]">
+                        <div className="flex h-12 w-full items-center justify-center rounded-[8px] bg-[#f4f4f4]">
+                          <img src={brand.logo} alt={brand.name} loading="lazy" className="max-h-[30px] max-w-[72%] object-contain" />
+                        </div>
                         <span className="text-[13px] text-[#8a8a8f]">{brand.name}</span>
                       </button>
                     ))}
@@ -932,8 +934,8 @@ function App() {
                 {/* How it works */}
                 <section className="mb-12">
                   <h2 className="mb-5 text-[20px] font-medium text-[#f4f4f5]">How it works</h2>
-                  <div className="grid gap-6 sm:grid-cols-3">
-                    <div className="flex flex-col gap-3">
+                  <div className="mx-auto grid max-w-3xl gap-8 sm:grid-cols-3">
+                    <div className="flex flex-col items-center gap-3 text-center">
                       <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[12px] bg-[rgba(249,115,22,0.12)] text-orange-500">
                         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
                       </div>
@@ -942,7 +944,7 @@ function App() {
                         <p className="mt-0.5 text-xs text-[#8a8a8f]">Search or browse sneakers</p>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col items-center gap-3 text-center">
                       <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[12px] bg-[rgba(249,115,22,0.12)] text-orange-500">
                         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" /></svg>
                       </div>
@@ -951,7 +953,7 @@ function App() {
                         <p className="mt-0.5 text-xs text-[#8a8a8f]">Compare prices from 10+ stores</p>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col items-center gap-3 text-center">
                       <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[12px] bg-[rgba(249,115,22,0.12)] text-orange-500">
                         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
                       </div>
