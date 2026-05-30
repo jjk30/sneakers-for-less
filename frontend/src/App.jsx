@@ -40,8 +40,8 @@ function ProductCard({ product, isFav, onToggleFavorite, onCompare }) {
   const [imgError, setImgError] = useState(false)
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 transition duration-200 hover:-translate-y-1 hover:border-orange-500/60 hover:shadow-lg hover:shadow-black/40">
-      {/* Image area — fixed square, white bg, contain, padded */}
+    <div className="flex flex-col overflow-hidden rounded-[14px] border border-white/[0.08] bg-[#141416] transition hover:border-white/[0.14]">
+      {/* Image area — white bg, fixed aspect, contain */}
       <div className="relative">
         <div className="relative aspect-square w-full cursor-pointer bg-white p-5" onClick={onCompare}>
           {!imgLoaded && !imgError && (
@@ -67,7 +67,7 @@ function ProductCard({ product, isFav, onToggleFavorite, onCompare }) {
 
         {/* discount pill — top-left (guarded) */}
         {product.discount_percent > 0 && (
-          <span className="absolute left-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-bold text-white shadow">
+          <span className="absolute left-3 top-3 rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-medium text-[#2a1500]">
             -{product.discount_percent}%
           </span>
         )}
@@ -77,61 +77,68 @@ function ProductCard({ product, isFav, onToggleFavorite, onCompare }) {
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
           aria-label={isFav ? 'Remove from wishlist' : 'Add to wishlist'}
-          className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur transition ${
+          className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition ${
             isFav
-              ? 'border-orange-500 bg-orange-500/90 text-white'
-              : 'border-white/20 bg-black/40 text-white/80 hover:border-white/40 hover:text-white'
+              ? 'bg-orange-500 text-[#2a1500]'
+              : 'bg-black/55 text-white/90 hover:bg-black/70'
           }`}
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill={isFav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill={isFav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </button>
       </div>
 
-      {/* Info */}
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <span className="text-xs font-semibold uppercase tracking-wider text-orange-500">{product.brand}</span>
-        <h4 onClick={onCompare} className="line-clamp-2 min-h-[2.5rem] cursor-pointer text-sm font-bold leading-snug text-white">
+      {/* Body */}
+      <div className="flex flex-1 flex-col gap-2 p-3.5">
+        <span className="text-[11px] uppercase tracking-[0.08em] text-[#7a7a80]">{product.brand}</span>
+        <h4 onClick={onCompare} className="line-clamp-2 min-h-[2.5rem] cursor-pointer text-sm font-normal leading-[1.3] text-[#eaeaec]">
           {product.name}
         </h4>
 
         {/* price row */}
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <span className="text-lg font-bold text-white">${product.lowest_price}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-lg font-medium text-[#f4f4f5]">${product.lowest_price}</span>
           {product.retail_price > product.lowest_price && (
-            <span className="text-sm text-neutral-500 line-through">${product.retail_price}</span>
+            <span className="text-[13px] text-[#6a6a6f] line-through">${product.retail_price}</span>
           )}
           {/* "Save $X" — optional: only when a dollar discount is actually present */}
           {product.discount > 0 && (
-            <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-semibold text-green-400">
+            <span className="rounded-[6px] bg-[rgba(74,222,128,0.12)] px-1.5 py-0.5 text-[11px] text-[#4ade80]">
               Save ${product.discount}
             </span>
           )}
         </div>
 
-        {/* meta badges: Pre-Owned (neutral, only when applicable) + Verified */}
+        {/* meta: Pre-Owned (only when applicable) + Verified */}
         <div className="flex items-center gap-2 text-xs">
           {product.condition === 'pre-owned' && (
-            <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 font-medium text-neutral-300">
+            <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[11px] text-[#8a8a8f]">
               Pre-Owned
             </span>
           )}
-          <span className="flex items-center gap-1 text-neutral-400">
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M20 6L9 17l-5-5" />
+          <span className="flex items-center gap-1 text-xs text-[#7a7a80]">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#4ade80]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="m8.5 12 2.5 2.5 4.5-4.5" />
             </svg>
             Verified
           </span>
         </div>
 
-        {/* full-width outline Compare — existing selectProduct flow */}
+        {/* full-width outline "Compare prices" — existing onCompare action */}
         <button
           type="button"
           onClick={onCompare}
-          className="mt-2 w-full rounded-lg border border-orange-500/70 py-2 text-sm font-semibold text-orange-400 transition hover:bg-orange-500 hover:text-white"
+          className="mt-auto flex w-full items-center justify-center gap-2 rounded-[10px] border border-orange-500/50 py-2 text-sm font-medium text-orange-500 transition hover:bg-orange-500 hover:text-[#2a1500]"
         >
-          Compare
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M8 3 4 7l4 4" />
+            <path d="M4 7h16" />
+            <path d="m16 21 4-4-4-4" />
+            <path d="M20 17H4" />
+          </svg>
+          Compare prices
         </button>
       </div>
     </div>
