@@ -142,18 +142,24 @@ function App() {
   // Restore the initial view from the URL on load (refresh / deep link).
   const initialRoute = (() => {
     const p = new URLSearchParams(window.location.search)
+    if (p.get('view') === 'account') {
+      const tab = p.get('tab')
+      return { type: 'account', value: ['favorites', 'alerts', 'settings'].includes(tab) ? tab : 'favorites' }
+    }
     if (p.get('product')) return { type: 'product', value: p.get('product') }
     if (p.get('category')) return { type: 'category', value: p.get('category') }
     if (p.get('brand')) return { type: 'brand', value: p.get('brand') }
     if (p.get('search')) return { type: 'search', value: p.get('search') }
     return null
   })()
+  // Data routes paint a loading spinner on mount; the account view does not.
+  const isDataRoute = !!initialRoute && initialRoute.type !== 'account'
 
   const [searchQuery, setSearchQuery] = useState('')
   const [results, setResults] = useState([])
   const [sneakerInfo, setSneakerInfo] = useState(null)
-  const [hasSearched, setHasSearched] = useState(!!initialRoute)
-  const [loading, setLoading] = useState(!!initialRoute)
+  const [hasSearched, setHasSearched] = useState(isDataRoute)
+  const [loading, setLoading] = useState(isDataRoute)
   const [error, setError] = useState(null)
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
@@ -179,8 +185,8 @@ function App() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const [favorites, setFavorites] = useState([])
-  const [showProfile, setShowProfile] = useState(false)
-  const [profileTab, setProfileTab] = useState('favorites')
+  const [showProfile, setShowProfile] = useState(initialRoute?.type === 'account' && !!localStorage.getItem('sneakersUser'))
+  const [profileTab, setProfileTab] = useState(initialRoute?.type === 'account' ? initialRoute.value : 'favorites')
   const [priceAlerts, setPriceAlerts] = useState([])
 
   useEffect(() => {
@@ -193,7 +199,16 @@ function App() {
       loadUserData(userData.email)
     }
     if (!historyInitialized) {
-      if (initialRoute) {
+      if (initialRoute && initialRoute.type === 'account') {
+        if (savedUser) {
+          window.history.replaceState({ view: 'account', tab: initialRoute.value }, '', `?view=account&tab=${initialRoute.value}`)
+          // showProfile + profileTab were lazy-initialized from initialRoute.
+        } else {
+          // Account view requires a logged-in user; fall back to home.
+          window.history.replaceState({ page: 'home', isBase: true }, '', window.location.pathname)
+          setShowProfile(false)
+        }
+      } else if (initialRoute) {
         const { type, value } = initialRoute
         window.history.replaceState({ [type]: value }, '', `?${type}=${encodeURIComponent(value)}`)
         if (type === 'product') restoreProduct(value)
@@ -207,7 +222,8 @@ function App() {
     }
     const handlePopState = (event) => {
       const state = event.state
-      if (!state || state.page === 'home' || state.isBase) resetToHome()
+      if (state && state.view === 'account') restoreAccount(state.tab)
+      else if (!state || state.page === 'home' || state.isBase) resetToHome()
       else if (state.category) restoreCategory(state.category)
       else if (state.brand) restoreBrand(state.brand)
       else if (state.search) restoreSearch(state.search)
@@ -254,6 +270,16 @@ function App() {
   }
 
   const resetToHome = () => { setSelectedCategory(''); setSelectedBrand(''); setHasSearched(false); setSneakerInfo(null); setAllProducts([]); setResults([]); setSearchQuery(''); setShowProfile(false) }
+
+  const restoreAccount = (tab) => {
+    setShowProfile(true); setHasSearched(false)
+    setProfileTab(['favorites', 'alerts', 'settings'].includes(tab) ? tab : 'favorites')
+  }
+
+  const selectProfileTab = (tab) => {
+    setProfileTab(tab)
+    window.history.replaceState({ view: 'account', tab }, '', `?view=account&tab=${tab}`)
+  }
   
   const restoreCategory = async (category) => {
     setLoading(true); setHasSearched(true); setError(null); setSelectedCategory(category); setSelectedBrand(''); setSneakerInfo(null); setSearchQuery(''); setShowProfile(false)
@@ -395,7 +421,7 @@ function App() {
     catch (e) { console.error('Failed to remove alert:', e) }
   }
 
-  const openProfile = () => { setShowProfile(true); setHasSearched(false) }
+  const openProfile = () => { setShowProfile(true); setHasSearched(false); window.history.pushState({ view: 'account', tab: profileTab }, '', `?view=account&tab=${profileTab}`) }
 
   const sortProducts = (products) => {
     const arr = [...products]
@@ -582,9 +608,9 @@ function App() {
         <div className="profile-page">
           <div className="profile-header"><h2><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-0.125em', marginRight: '0.4em' }} aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>My Account</h2><p>{user.email}</p></div>
           <div className="profile-tabs">
-            <button className={profileTab === 'favorites' ? 'active' : ''} onClick={() => setProfileTab('favorites')}><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-0.125em', marginRight: '0.4em' }} aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>Favorites ({favorites.length})</button>
-            <button className={profileTab === 'alerts' ? 'active' : ''} onClick={() => setProfileTab('alerts')}><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-0.125em', marginRight: '0.4em' }} aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>Price Alerts ({priceAlerts.length})</button>
-            <button className={profileTab === 'settings' ? 'active' : ''} onClick={() => setProfileTab('settings')}><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-0.125em', marginRight: '0.4em' }} aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>Settings</button>
+            <button className={profileTab === 'favorites' ? 'active' : ''} onClick={() => selectProfileTab('favorites')}><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-0.125em', marginRight: '0.4em' }} aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>Favorites ({favorites.length})</button>
+            <button className={profileTab === 'alerts' ? 'active' : ''} onClick={() => selectProfileTab('alerts')}><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-0.125em', marginRight: '0.4em' }} aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>Price Alerts ({priceAlerts.length})</button>
+            <button className={profileTab === 'settings' ? 'active' : ''} onClick={() => selectProfileTab('settings')}><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-0.125em', marginRight: '0.4em' }} aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>Settings</button>
           </div>
           {profileTab === 'favorites' && (
             <div className="favorites-list">
