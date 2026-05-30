@@ -386,9 +386,11 @@ function App() {
     <div className="app">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-neutral-950/95 backdrop-blur">
         {/* Row 1: logo + auth */}
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-5 py-4">
+        <div className="flex items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-16">
           <button type="button" onClick={goHome} className="flex items-center gap-2 whitespace-nowrap text-xl font-extrabold tracking-tight sm:text-2xl">
-            <img src="/logo.png" alt="Sneakers For Less" className="h-9 w-auto sm:h-12" />
+            <img src="/logo.png" alt="" className="h-8 w-auto sm:h-10" />
+            <span className="text-orange-500">SNEAKERS</span>
+            <span className="text-white">FOR LESS</span>
           </button>
 
           {user ? (
@@ -408,7 +410,7 @@ function App() {
 
         {/* Row 2: nav + search */}
         <div className="border-t border-white/10">
-          <div className="mx-auto flex max-w-[1200px] flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 px-6 py-3 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:px-16">
             <nav className="flex flex-wrap items-center gap-1">
               {/* Categories — CSS-only dropdown, reuses categories + browseByCategory */}
               <div className="group relative">
@@ -435,9 +437,6 @@ function App() {
                   ))}
                 </div>
               </div>
-
-              {/* Deals — existing return-to-homepage/hot-deals handler */}
-              <button type="button" onClick={goHome} className="rounded-lg px-3 py-2 text-base font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">Deals</button>
             </nav>
 
             {/* Search — reuses searchQuery + handleSearch + handleKeyPress */}
