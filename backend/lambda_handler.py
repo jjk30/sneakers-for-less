@@ -7,6 +7,9 @@ import time
 from urllib.parse import quote_plus
 from decimal import Decimal
 
+import google.auth.transport.requests
+from google.oauth2 import id_token as google_id_token
+
 # Initialize DynamoDB outside handler for connection reuse (reduces cold start)
 dynamodb = boto3.resource('dynamodb', region_name='us-east-2')
 products_table = dynamodb.Table('sneakers-for-less-products')
@@ -390,6 +393,51 @@ def save_user_alerts(email, alerts):
         return False
 
 # ============================================
+# FIREBASE ID TOKEN VERIFICATION
+# ============================================
+FIREBASE_PROJECT_ID = "sneakers-for-less"
+
+# Reuse a single transport across warm invocations (it caches the public certs).
+_firebase_request = google.auth.transport.requests.Request()
+
+def get_verified_email(event):
+    """Verify the caller's Firebase ID token and return the verified email.
+
+    Reads the `Authorization: Bearer <token>` header (case-insensitive, matching
+    the x-admin-secret lookup style). Verifies the token against Google's public
+    certs with the Firebase project id as audience, using a path that needs no
+    service-account private key. Returns the lowercased verified email on success,
+    or None on ANY failure (missing header, expired/invalid token, wrong audience
+    or issuer).
+    """
+    request_headers = event.get('headers') or {}
+    auth_header = request_headers.get('authorization') or request_headers.get('Authorization') or ''
+    if not auth_header.startswith('Bearer '):
+        return None
+    token = auth_header[len('Bearer '):].strip()
+    if not token:
+        return None
+
+    try:
+        claims = google_id_token.verify_firebase_token(
+            token,
+            _firebase_request,
+            audience=FIREBASE_PROJECT_ID
+        )
+    except Exception as e:
+        print(f"Firebase token verification failed: {e}")
+        return None
+
+    if not claims:
+        return None
+    if claims.get('iss') != f"https://securetoken.google.com/{FIREBASE_PROJECT_ID}":
+        return None
+    email = claims.get('email')
+    if not email:
+        return None
+    return email.lower()
+
+# ============================================
 # MAIN HANDLER
 # ============================================
 def handler(event, context):
@@ -538,10 +586,10 @@ def handler(event, context):
         # USER DATA
         # ============================================
         if path == '/api/user/data' and http_method == 'GET':
-            email = query_params.get('email', '')
+            email = get_verified_email(event)
             if not email:
-                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'Email required'})}
-            
+                return {'statusCode': 401, 'headers': headers, 'body': json.dumps({'error': 'Unauthorized'})}
+
             data = get_user_data(email)
             if data:
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps(data)}
@@ -551,14 +599,14 @@ def handler(event, context):
         # USER FAVORITES
         # ============================================
         if path == '/api/user/favorites' and http_method == 'POST':
+            email = get_verified_email(event)
+            if not email:
+                return {'statusCode': 401, 'headers': headers, 'body': json.dumps({'error': 'Unauthorized'})}
+
             body = event.get('body', '{}')
             data = json.loads(body) if isinstance(body, str) else body
-            email = data.get('email', '')
             favorites = data.get('favorites', [])
-            
-            if not email:
-                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'Email required'})}
-            
+
             if save_user_favorites(email, favorites):
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'success': True})}
             return {'statusCode': 500, 'headers': headers, 'body': json.dumps({'error': 'Failed to save'})}
@@ -567,14 +615,14 @@ def handler(event, context):
         # USER ALERTS
         # ============================================
         if path == '/api/user/alerts' and http_method == 'POST':
+            email = get_verified_email(event)
+            if not email:
+                return {'statusCode': 401, 'headers': headers, 'body': json.dumps({'error': 'Unauthorized'})}
+
             body = event.get('body', '{}')
             data = json.loads(body) if isinstance(body, str) else body
-            email = data.get('email', '')
             alerts = data.get('alerts', [])
-            
-            if not email:
-                return {'statusCode': 400, 'headers': headers, 'body': json.dumps({'error': 'Email required'})}
-            
+
             if save_user_alerts(email, alerts):
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'success': True})}
             return {'statusCode': 500, 'headers': headers, 'body': json.dumps({'error': 'Failed to save'})}
