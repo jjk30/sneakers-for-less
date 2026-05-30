@@ -139,11 +139,21 @@ function ProductCard({ product, isFav, onToggleFavorite, onCompare }) {
 }
 
 function App() {
+  // Restore the initial view from the URL on load (refresh / deep link).
+  const initialRoute = (() => {
+    const p = new URLSearchParams(window.location.search)
+    if (p.get('product')) return { type: 'product', value: p.get('product') }
+    if (p.get('category')) return { type: 'category', value: p.get('category') }
+    if (p.get('brand')) return { type: 'brand', value: p.get('brand') }
+    if (p.get('search')) return { type: 'search', value: p.get('search') }
+    return null
+  })()
+
   const [searchQuery, setSearchQuery] = useState('')
   const [results, setResults] = useState([])
   const [sneakerInfo, setSneakerInfo] = useState(null)
-  const [hasSearched, setHasSearched] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [hasSearched, setHasSearched] = useState(!!initialRoute)
+  const [loading, setLoading] = useState(!!initialRoute)
   const [error, setError] = useState(null)
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
@@ -183,7 +193,16 @@ function App() {
       loadUserData(userData.email)
     }
     if (!historyInitialized) {
-      window.history.replaceState({ page: 'home', isBase: true }, '', window.location.pathname)
+      if (initialRoute) {
+        const { type, value } = initialRoute
+        window.history.replaceState({ [type]: value }, '', `?${type}=${encodeURIComponent(value)}`)
+        if (type === 'product') restoreProduct(value)
+        else if (type === 'category') restoreCategory(value)
+        else if (type === 'brand') restoreBrand(value)
+        else if (type === 'search') restoreSearch(value)
+      } else {
+        window.history.replaceState({ page: 'home', isBase: true }, '', window.location.pathname)
+      }
       setHistoryInitialized(true)
     }
     const handlePopState = (event) => {
