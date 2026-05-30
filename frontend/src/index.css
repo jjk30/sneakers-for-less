@@ -9,6 +9,22 @@
     padding: 0;
     box-sizing: border-box;
   }
+
+  /* Interactive elements show the pointer (hand) cursor app-wide. In @layer base
+     so explicit Tailwind cursor-* utilities still win. Disabled controls do not. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  label[for],
+  select,
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 body {
