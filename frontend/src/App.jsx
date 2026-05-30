@@ -548,15 +548,13 @@ function App() {
               ) : (
                 <div className="grid">
                   {favorites.map(fav => (
-                    <div key={fav.id} className="product-card">
-                      <button className="remove-fav" onClick={() => toggleFavorite(fav)}>×</button>
-                      {fav.image && <img src={fav.image} alt={fav.name} className="product-image" loading="lazy" onClick={() => selectProduct(fav.id)} />}
-                      <div className="product-info" onClick={() => selectProduct(fav.id)}>
-                        <span className="product-brand">{fav.brand}</span>
-                        <h4 className="product-name">{fav.name}</h4>
-                        <span className="lowest-price">${fav.lowest_price}</span>
-                      </div>
-                    </div>
+                    <ProductCard
+                      key={fav.id}
+                      product={fav}
+                      isFav={isFavorite(fav.id)}
+                      onToggleFavorite={() => toggleFavorite(fav)}
+                      onCompare={() => selectProduct(fav.id)}
+                    />
                   ))}
                 </div>
               )}
