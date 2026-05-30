@@ -1,9 +1,14 @@
 @import "tailwindcss";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Keep the global reset in @layer base so Tailwind's utility layer (mx-auto,
+   px-*, p-*, etc.) still wins — an unlayered `*` reset would override every
+   spacing utility. */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 body {

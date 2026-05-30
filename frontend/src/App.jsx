@@ -386,9 +386,9 @@ function App() {
     <div className="app">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-neutral-950/95 backdrop-blur">
         {/* Row 1: logo + auth */}
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-          <button type="button" onClick={goHome} className="flex items-center gap-2 text-xl font-extrabold tracking-tight">
-            <span className="text-2xl" aria-hidden="true">👟</span>
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-5 py-4">
+          <button type="button" onClick={goHome} className="flex items-center gap-2 whitespace-nowrap text-xl font-extrabold tracking-tight sm:text-2xl">
+            <span className="text-2xl sm:text-3xl" aria-hidden="true">👟</span>
             <span className="text-orange-500">SNEAKERS</span>
             <span className="text-white">FOR LESS</span>
           </button>
@@ -410,11 +410,11 @@ function App() {
 
         {/* Row 2: nav + search */}
         <div className="border-t border-white/10">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mx-auto flex max-w-[1200px] flex-col gap-3 px-5 py-3 lg:flex-row lg:items-center lg:justify-between">
             <nav className="flex flex-wrap items-center gap-1">
               {/* Categories — CSS-only dropdown, reuses categories + browseByCategory */}
               <div className="group relative">
-                <button type="button" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">
+                <button type="button" className="flex items-center gap-1 rounded-lg px-3 py-2 text-base font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">
                   Categories
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
                 </button>
@@ -427,7 +427,7 @@ function App() {
 
               {/* Brands — CSS-only dropdown, reuses brands + browseByBrand */}
               <div className="group relative">
-                <button type="button" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">
+                <button type="button" className="flex items-center gap-1 rounded-lg px-3 py-2 text-base font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">
                   Brands
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
                 </button>
@@ -439,7 +439,7 @@ function App() {
               </div>
 
               {/* Deals — existing return-to-homepage/hot-deals handler */}
-              <button type="button" onClick={goHome} className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">Deals</button>
+              <button type="button" onClick={goHome} className="rounded-lg px-3 py-2 text-base font-medium text-neutral-300 transition hover:bg-white/5 hover:text-white">Deals</button>
             </nav>
 
             {/* Search — reuses searchQuery + handleSearch + handleKeyPress */}
