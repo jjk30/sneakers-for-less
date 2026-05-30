@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 import { auth } from './firebase'
@@ -188,6 +188,13 @@ function App() {
   const [showProfile, setShowProfile] = useState(initialRoute?.type === 'account' && !!localStorage.getItem('sneakersUser'))
   const [profileTab, setProfileTab] = useState(initialRoute?.type === 'account' ? initialRoute.value : 'favorites')
   const [priceAlerts, setPriceAlerts] = useState([])
+
+  // Account dropdown (header) + sign-out overlay
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+  const [signOutDone, setSignOutDone] = useState(false)
+  const accountMenuRef = useRef(null)
+  const signingOutRef = useRef(false)
 
   useEffect(() => {
     fetchInitialData()
@@ -382,6 +389,33 @@ function App() {
     setUser(null); setFavorites([]); setPriceAlerts([]); localStorage.removeItem('sneakersUser'); setShowProfile(false)
   }
 
+  // Sign out with a ~3s UX overlay: spinner -> green check. The real signOut still runs.
+  const handleSignOut = async () => {
+    if (signingOutRef.current) return            // guard rapid double-clicks (race-proof)
+    signingOutRef.current = true
+    setAccountMenuOpen(false)
+    setSignOutDone(false)
+    setSigningOut(true)
+    const logoutPromise = handleLogout()         // real Firebase signOut + state cleanup
+    await new Promise((r) => setTimeout(r, 2400)) // spinner for ~2.4s from click
+    await logoutPromise                           // ensure the real sign-out finished
+    setSignOutDone(true)                          // swap to green check + "Signed out"
+    await new Promise((r) => setTimeout(r, 600))  // ~0.6s (≈3s total)
+    setSigningOut(false)
+    setSignOutDone(false)
+    signingOutRef.current = false
+  }
+
+  // Close the account dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!accountMenuOpen) return
+    const onMouseDown = (e) => { if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) setAccountMenuOpen(false) }
+    const onKeyDown = (e) => { if (e.key === 'Escape') setAccountMenuOpen(false) }
+    document.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => { document.removeEventListener('mousedown', onMouseDown); document.removeEventListener('keydown', onKeyDown) }
+  }, [accountMenuOpen])
+
   const resetAuthForm = () => {
     setAuthEmail(''); setAuthPassword(''); setAuthConfirm(''); setAuthError(''); setAuthSuccess('')
     setShowPassword(false); setShowConfirmPassword(false)
@@ -453,26 +487,37 @@ function App() {
                 <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold leading-5 text-white">{favorites.length}</span>
               </button>
 
-              {/* b) Account chip — avatar (photo or initials fallback) + first name */}
-              <button type="button" onClick={openProfile} className="flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-3 text-sm text-white/90 transition hover:border-white/30">
-                <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-500 text-[11px] font-bold uppercase leading-none text-white">
-                  {(user.name ? user.name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') : user.email.split('@')[0].slice(0, 2)).toUpperCase()}
-                  {user.photo && (
-                    <img src={user.photo} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none' }} className="absolute inset-0 h-full w-full rounded-full object-cover" />
-                  )}
-                </span>
-                <span className="hidden sm:inline">{user.name ? user.name.trim().split(/\s+/)[0] : user.email.split('@')[0]}</span>
-              </button>
+              {/* b) Account dropdown — trigger pill (avatar + first name + chevron) */}
+              <div className="relative" ref={accountMenuRef}>
+                <button type="button" onClick={() => setAccountMenuOpen((o) => !o)} aria-haspopup="menu" aria-expanded={accountMenuOpen} className="flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-2 text-sm text-white/90 transition hover:border-white/30">
+                  <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-500 text-[11px] font-bold uppercase leading-none text-white">
+                    {(user.name ? user.name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') : user.email.split('@')[0].slice(0, 2)).toUpperCase()}
+                    {user.photo && (
+                      <img src={user.photo} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none' }} className="absolute inset-0 h-full w-full rounded-full object-cover" />
+                    )}
+                  </span>
+                  <span className="hidden sm:inline">{user.name ? user.name.trim().split(/\s+/)[0] : user.email.split('@')[0]}</span>
+                  <svg viewBox="0 0 24 24" className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${accountMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
 
-              {/* c) Log out ghost button */}
-              <button type="button" onClick={handleLogout} className="flex items-center gap-2 rounded-full px-3 py-2 text-sm text-neutral-400 transition hover:text-white">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                <span>Log out</span>
-              </button>
+                {accountMenuOpen && (
+                  <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-white/10 bg-neutral-900 shadow-xl">
+                    <div className="border-b border-white/10 px-4 py-3" title={user.email}>
+                      <div className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-neutral-400">{user.email}</div>
+                    </div>
+                    <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:opacity-60">
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <button type="button" onClick={() => setShowAuthModal(true)} className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
@@ -530,6 +575,27 @@ function App() {
           </div>
         </div>
       </header>
+
+      {signingOut && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm" role="status" aria-live="polite">
+          {signOutDone ? (
+            <>
+              <svg viewBox="0 0 24 24" className="h-12 w-12 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 12l3 3 5-6" />
+              </svg>
+              <p className="text-base font-medium text-white">Signed out</p>
+            </>
+          ) : (
+            <>
+              <svg viewBox="0 0 24 24" className="h-12 w-12 animate-spin text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round" />
+              </svg>
+              <p className="text-base font-medium text-white">Signing out…</p>
+            </>
+          )}
+        </div>
+      )}
 
       {showAuthModal && (
         <div className="modal-overlay" onClick={() => { setShowAuthModal(false); resetAuthForm(); }}>
