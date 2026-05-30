@@ -77,7 +77,7 @@ function ProductCard({ product, isFav, onToggleFavorite, onCompare }) {
           type="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
           aria-label={isFav ? 'Remove from wishlist' : 'Add to wishlist'}
-          className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full transition ${
+          className={`absolute right-3 top-3 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition ${
             isFav
               ? 'bg-orange-500 text-[#2a1500]'
               : 'bg-black/55 text-white/90 hover:bg-black/70'
@@ -130,7 +130,7 @@ function ProductCard({ product, isFav, onToggleFavorite, onCompare }) {
         <button
           type="button"
           onClick={onCompare}
-          className="mt-auto flex w-full items-center justify-center gap-2 rounded-[10px] border border-orange-500/50 py-2 text-sm font-medium text-orange-500 transition hover:bg-orange-500 hover:text-[#2a1500]"
+          className="mt-auto flex w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-orange-500/50 py-2 text-sm font-medium text-orange-500 transition hover:bg-orange-500 hover:text-[#2a1500]"
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M8 3 4 7l4 4" />
@@ -490,7 +490,7 @@ function App() {
         <div className="flex items-center justify-between gap-4 px-6 py-3 sm:px-10 lg:px-16">
           {/* Left: wordmark + quiet nav */}
           <div className="flex items-center gap-6">
-            <button type="button" onClick={goHome} className="flex items-center gap-2 whitespace-nowrap">
+            <button type="button" onClick={goHome} className="flex cursor-pointer items-center gap-2 whitespace-nowrap">
               <img src="/logo.png" alt="" className="h-7 w-auto" />
               <span className="text-lg tracking-tight">
                 <span className="font-medium text-orange-500">SNEAKERS</span>
@@ -500,26 +500,26 @@ function App() {
             <nav className="hidden items-center gap-1 sm:flex">
               {/* Categories — quiet nav link; dropdown behavior unchanged */}
               <div className="group relative">
-                <button type="button" className="flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[13px] text-[#8a8a8f] transition hover:text-[#f4f4f5]">
+                <button type="button" className="flex cursor-pointer items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[13px] text-[#8a8a8f] transition hover:text-[#f4f4f5]">
                   Categories
                   <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
                 </button>
                 <div className="invisible absolute left-0 top-full z-50 mt-1 max-h-80 w-56 overflow-auto rounded-xl border border-white/[0.08] bg-[#141416] p-1 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                   {categories.map((cat) => (
-                    <button key={cat} type="button" onClick={() => browseByCategory(cat)} className="block w-full rounded-[10px] px-3 py-2 text-left text-sm text-[#8a8a8f] transition hover:bg-orange-500 hover:text-[#2a1500]">{cat}</button>
+                    <button key={cat} type="button" onClick={() => browseByCategory(cat)} className="block w-full cursor-pointer rounded-[10px] px-3 py-2 text-left text-sm text-[#8a8a8f] transition hover:bg-orange-500 hover:text-[#2a1500]">{cat}</button>
                   ))}
                 </div>
               </div>
 
               {/* Brands — quiet nav link; dropdown behavior unchanged */}
               <div className="group relative">
-                <button type="button" className="flex items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[13px] text-[#8a8a8f] transition hover:text-[#f4f4f5]">
+                <button type="button" className="flex cursor-pointer items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[13px] text-[#8a8a8f] transition hover:text-[#f4f4f5]">
                   Brands
                   <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
                 </button>
                 <div className="invisible absolute left-0 top-full z-50 mt-1 max-h-80 w-56 overflow-auto rounded-xl border border-white/[0.08] bg-[#141416] p-1 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                   {brands.map((brand) => (
-                    <button key={brand} type="button" onClick={() => browseByBrand(brand)} className="block w-full rounded-[10px] px-3 py-2 text-left text-sm text-[#8a8a8f] transition hover:bg-orange-500 hover:text-[#2a1500]">{brand}</button>
+                    <button key={brand} type="button" onClick={() => browseByBrand(brand)} className="block w-full cursor-pointer rounded-[10px] px-3 py-2 text-left text-sm text-[#8a8a8f] transition hover:bg-orange-500 hover:text-[#2a1500]">{brand}</button>
                   ))}
                 </div>
               </div>
@@ -530,7 +530,7 @@ function App() {
           {user ? (
             <div className="flex items-center gap-2">
               {/* Wishlist */}
-              <button type="button" onClick={openProfile} aria-label="Wishlist" className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1.5 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
+              <button type="button" onClick={openProfile} aria-label="Wishlist" className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1.5 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#8a8a8f]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
@@ -540,7 +540,7 @@ function App() {
 
               {/* Account dropdown — trigger pill + menu (behavior unchanged) */}
               <div className="relative" ref={accountMenuRef}>
-                <button type="button" onClick={() => setAccountMenuOpen((o) => !o)} aria-haspopup="menu" aria-expanded={accountMenuOpen} className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] py-1 pl-1 pr-2 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
+                <button type="button" onClick={() => setAccountMenuOpen((o) => !o)} aria-haspopup="menu" aria-expanded={accountMenuOpen} className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] py-1 pl-1 pr-2 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
                   <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-500 text-[11px] font-medium uppercase leading-none text-[#2a1500]">
                     {(user.name ? user.name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') : user.email.split('@')[0].slice(0, 2)).toUpperCase()}
                     {user.photo && (
@@ -558,7 +558,7 @@ function App() {
                     <div className="border-b border-white/[0.08] px-4 py-3" title={user.email}>
                       <div className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-[#8a8a8f]">{user.email}</div>
                     </div>
-                    <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:opacity-60">
+                    <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:cursor-default disabled:opacity-60">
                       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                         <polyline points="16 17 21 12 16 7" />
@@ -571,7 +571,7 @@ function App() {
               </div>
             </div>
           ) : (
-            <button type="button" onClick={() => setShowAuthModal(true)} className="rounded-[10px] bg-orange-500 px-4 py-2 text-sm font-medium text-[#2a1500] transition hover:bg-orange-400">
+            <button type="button" onClick={() => setShowAuthModal(true)} className="cursor-pointer rounded-[10px] bg-orange-500 px-4 py-2 text-sm font-medium text-[#2a1500] transition hover:bg-orange-400">
               Login / Sign Up
             </button>
           )}
@@ -753,7 +753,7 @@ function App() {
                     className="w-full rounded-[12px] border border-white/[0.08] bg-[#141416] py-3 pl-10 pr-3 text-sm text-[#f4f4f5] placeholder:text-[#6a6a6f] transition focus:border-white/[0.14] focus:outline-none"
                   />
                 </div>
-                <button type="button" onClick={handleSearch} className="shrink-0 rounded-[12px] bg-orange-500 px-5 py-3 text-sm font-medium text-[#2a1500] transition hover:bg-orange-400">
+                <button type="button" onClick={handleSearch} className="shrink-0 cursor-pointer rounded-[12px] bg-orange-500 px-5 py-3 text-sm font-medium text-[#2a1500] transition hover:bg-orange-400">
                   {loading ? 'Searching…' : 'Search'}
                 </button>
               </div>
@@ -762,7 +762,7 @@ function App() {
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <span className="text-[13px] text-[#6a6a6f]">Popular</span>
                 {['Jordan 1', 'Dunk Low', 'Yeezy 350', 'Travis Scott', 'Air Max 95', 'Air Force 1'].map((tag) => (
-                  <button key={tag} type="button" onClick={() => quickSearch(tag)} className="rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1 text-[13px] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">{tag}</button>
+                  <button key={tag} type="button" onClick={() => quickSearch(tag)} className="cursor-pointer rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1 text-[13px] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">{tag}</button>
                 ))}
               </div>
             </section>
@@ -907,7 +907,7 @@ function App() {
                   <h2 className="mb-5 text-[20px] font-medium text-[#f4f4f5]">Shop by Category</h2>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                     {CATEGORY_IMAGES.map((cat) => (
-                      <button key={cat.name} type="button" onClick={() => browseByCategory(cat.name)} className="relative aspect-[4/3] overflow-hidden rounded-[14px] border border-white/[0.08] transition hover:border-white/[0.14]">
+                      <button key={cat.name} type="button" onClick={() => browseByCategory(cat.name)} className="relative aspect-[4/3] cursor-pointer overflow-hidden rounded-[14px] border border-white/[0.08] transition hover:border-white/[0.14]">
                         <img src={cat.image} alt={cat.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                         <span className="absolute bottom-3 left-3 text-[15px] font-medium text-white">{cat.name}</span>
@@ -921,7 +921,7 @@ function App() {
                   <h2 className="mb-5 text-[20px] font-medium text-[#f4f4f5]">Popular Brands</h2>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
                     {BRAND_LOGOS.map((brand) => (
-                      <button key={brand.name} type="button" onClick={() => browseByBrand(brand.name)} className="flex flex-col items-center gap-2 rounded-[12px] border border-white/[0.08] bg-[#141416] p-3 transition hover:border-white/[0.14]">
+                      <button key={brand.name} type="button" onClick={() => browseByBrand(brand.name)} className="flex cursor-pointer flex-col items-center gap-2 rounded-[12px] border border-white/[0.08] bg-[#141416] p-3 transition hover:border-white/[0.14]">
                         <div className="flex h-12 w-full items-center justify-center rounded-[8px] bg-[#f4f4f4]">
                           <img src={brand.logo} alt={brand.name} loading="lazy" className="max-h-[30px] max-w-[72%] object-contain" />
                         </div>
