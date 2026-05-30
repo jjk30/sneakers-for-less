@@ -702,7 +702,7 @@ function App() {
                 priceAlerts.map(alert => (
                   <div key={alert.id} className="alert-card">
                     {alert.image && <img src={alert.image} alt={alert.name} loading="lazy" />}
-                    <div className="alert-info"><h4>{alert.name}</h4><p>Current: ${alert.currentPrice} → Target: ${alert.targetPrice}</p></div>
+                    <div className="alert-info"><h4>{alert.name}</h4><p className="inline-flex items-center gap-1">Current: ${alert.currentPrice} <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg> Target: ${alert.targetPrice}</p></div>
                     <button className="remove-alert" onClick={() => removePriceAlert(alert.id)}>Remove</button>
                   </div>
                 ))
@@ -762,7 +762,17 @@ function App() {
             </section>
 
             {error && <div className="error-message"><p>{error}</p></div>}
-            {(selectedCategory || selectedBrand) && (<div className="active-filter"><span>Showing: {selectedCategory || selectedBrand}</span><button onClick={goHome} className="clear-filter">Clear</button></div>)}
+            {(selectedCategory || selectedBrand) && (
+              <div className="mb-5 flex">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1.5 text-[13px] text-[#8a8a8f]">
+                  Showing: <span className="text-orange-500">{selectedCategory || selectedBrand}</span>
+                  <button type="button" onClick={goHome} aria-label="Clear filter" className="ml-1 inline-flex items-center gap-1 text-[#6a6a6f] transition hover:text-[#f4f4f5]">
+                    Clear
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                  </button>
+                </span>
+              </div>
+            )}
 
             {hasSearched && !error && (
               <div className="results-section">
@@ -770,11 +780,11 @@ function App() {
                   <div className="loading"><div className="spinner"></div><p>Finding the best prices...</p></div>
                 ) : allProducts.length > 0 ? (
                   <div className="products-grid">
-                    <div className="grid-header">
-                      <h3 className="grid-title">{allProducts.length} products found</h3>
-                      <div className="sort-control">
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="text-sm text-[#8a8a8f]">{allProducts.length} products found</h3>
+                      <div className="flex items-center gap-2 text-[13px] text-[#8a8a8f]">
                         <label htmlFor="sort-select">Sort by:</label>
-                        <select id="sort-select" className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                        <select id="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="rounded-[10px] border border-white/[0.08] bg-[#141416] px-3 py-1.5 text-[13px] text-[#f4f4f5] transition focus:border-white/[0.14] focus:outline-none">
                           <option value="price-asc">Price: Low to High</option>
                           <option value="price-desc">Price: High to Low</option>
                           <option value="brand-asc">Brand (A-Z)</option>
@@ -816,7 +826,7 @@ function App() {
                           {(() => {
                             const saved = isFavorite(sneakerInfo.id)
                             return (
-                              <button type="button" onClick={() => toggleFavorite(sneakerInfo)} className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${saved ? 'border-orange-500 bg-orange-500 text-[#2a1500]' : 'border-orange-500/50 bg-[#121212] text-white hover:border-orange-500 hover:bg-[#1c1c1c]'}`}>
+                              <button type="button" onClick={() => toggleFavorite(sneakerInfo)} className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition ${saved ? 'border-orange-500 bg-orange-500 text-[#2a1500]' : 'border-orange-500/50 bg-[#121212] text-white hover:border-orange-500 hover:bg-[#1c1c1c]'}`}>
                                 <svg viewBox="0 0 24 24" className={`h-[18px] w-[18px] ${saved ? 'text-[#2a1500]' : 'text-orange-500'}`} fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                                 </svg>
@@ -827,7 +837,7 @@ function App() {
                           {(() => {
                             const alertOn = priceAlerts.some(a => a.id === sneakerInfo.id)
                             return (
-                              <button type="button" onClick={() => { const target = prompt('Enter target price for alert:', Math.floor(results[0].price * 0.9)); if (target) addPriceAlert(sneakerInfo, parseInt(target)) }} className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition ${alertOn ? 'border-orange-500 bg-orange-500 text-[#2a1500]' : 'border-orange-500/50 bg-[#121212] text-white hover:border-orange-500 hover:bg-[#1c1c1c]'}`}>
+                              <button type="button" onClick={() => { const target = prompt('Enter target price for alert:', Math.floor(results[0].price * 0.9)); if (target) addPriceAlert(sneakerInfo, parseInt(target)) }} className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition ${alertOn ? 'border-orange-500 bg-orange-500 text-[#2a1500]' : 'border-orange-500/50 bg-[#121212] text-white hover:border-orange-500 hover:bg-[#1c1c1c]'}`}>
                                 <svg viewBox="0 0 24 24" className={`h-[18px] w-[18px] ${alertOn ? 'text-[#2a1500]' : 'text-orange-500'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -860,8 +870,12 @@ function App() {
 
             {!hasSearched && (
               <div className="homepage">
-                <div className="hot-deals-section">
-                  <div className="section-header"><h3>🔥 Hot Deals</h3><span className="section-subtitle">Biggest discounts right now</span></div>
+                <section className="mb-12">
+                  <div className="mb-6">
+                    <p className="text-xs font-medium uppercase tracking-[0.12em] text-orange-500">Limited time</p>
+                    <h2 className="mt-1 text-[20px] font-medium text-[#f4f4f5]">Hot deals</h2>
+                    <p className="mt-0.5 text-sm text-[#8a8a8f]">Biggest discounts right now</p>
+                  </div>
                   {dealsLoading ? (
                     <div className="deals-loading"><div className="spinner"></div><p>Loading deals...</p></div>
                   ) : hotDeals.length > 0 ? (
@@ -879,35 +893,77 @@ function App() {
                   ) : (
                     <p className="no-deals">No deals available at the moment.</p>
                   )}
-                </div>
+                </section>
 
-                <div className="category-showcase">
-                  <h3>Shop by Category</h3>
-                  <div className="category-cards">{CATEGORY_IMAGES.map((cat) => (<div key={cat.name} className="category-card" onClick={() => browseByCategory(cat.name)}><img src={cat.image} alt={cat.name} loading="lazy" /><span className="category-name">{cat.name}</span></div>))}</div>
-                </div>
-
-                <div className="brand-showcase">
-                  <h3>Popular Brands</h3>
-                  <div className="brand-cards">{BRAND_LOGOS.map((brand) => (<div key={brand.name} className="brand-card" onClick={() => browseByBrand(brand.name)}><img src={brand.logo} alt={brand.name} loading="lazy" /><span className="brand-name">{brand.name}</span></div>))}</div>
-                </div>
-
-                <div className="how-it-works">
-                  <h3>How it works</h3>
-                  <div className="steps">
-                    <div className="step"><div className="step-num">1</div><p>Search or browse sneakers</p></div>
-                    <div className="step"><div className="step-num">2</div><p>Compare prices from 10+ stores</p></div>
-                    <div className="step"><div className="step-num">3</div><p>Click to buy at the lowest price</p></div>
+                {/* Shop by Category */}
+                <section className="mb-12">
+                  <h2 className="mb-5 text-[20px] font-medium text-[#f4f4f5]">Shop by Category</h2>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    {CATEGORY_IMAGES.map((cat) => (
+                      <button key={cat.name} type="button" onClick={() => browseByCategory(cat.name)} className="relative aspect-[4/3] overflow-hidden rounded-[14px] border border-white/[0.08] transition hover:border-white/[0.14]">
+                        <img src={cat.image} alt={cat.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                        <span className="absolute bottom-3 left-3 text-[15px] font-medium text-white">{cat.name}</span>
+                      </button>
+                    ))}
                   </div>
-                </div>
+                </section>
+
+                {/* Popular Brands */}
+                <section className="mb-12">
+                  <h2 className="mb-5 text-[20px] font-medium text-[#f4f4f5]">Popular Brands</h2>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
+                    {BRAND_LOGOS.map((brand) => (
+                      <button key={brand.name} type="button" onClick={() => browseByBrand(brand.name)} className="flex flex-col items-center gap-2 rounded-[12px] border border-white/[0.08] bg-[#141416] p-4 transition hover:border-white/[0.14]">
+                        <img src={brand.logo} alt={brand.name} loading="lazy" className="h-10 w-full object-contain" />
+                        <span className="text-[13px] text-[#8a8a8f]">{brand.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                {/* How it works */}
+                <section className="mb-12">
+                  <h2 className="mb-5 text-[20px] font-medium text-[#f4f4f5]">How it works</h2>
+                  <div className="grid gap-6 sm:grid-cols-3">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[12px] bg-[rgba(249,115,22,0.12)] text-orange-500">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-[#eaeaec]">Search</h3>
+                        <p className="mt-0.5 text-xs text-[#8a8a8f]">Search or browse sneakers</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[12px] bg-[rgba(249,115,22,0.12)] text-orange-500">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" /></svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-[#eaeaec]">Compare</h3>
+                        <p className="mt-0.5 text-xs text-[#8a8a8f]">Compare prices from 10+ stores</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[12px] bg-[rgba(249,115,22,0.12)] text-orange-500">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-[#eaeaec]">Buy</h3>
+                        <p className="mt-0.5 text-xs text-[#8a8a8f]">Click to buy at the lowest price</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
             )}
           </>
         )}
       </main>
 
-      <footer className="footer">
-        <p>Comparing prices across StockX, GOAT, eBay, Flight Club, Soccer.com and more</p>
-        <p className="footer-small">© 2026 SneakersForLess. Not affiliated with any retailer.</p>
+      <footer className="border-t border-white/[0.07] px-6 py-8 text-center sm:px-10 lg:px-16">
+        <p className="text-sm text-[#8a8a8f]">Comparing prices across StockX, GOAT, eBay, Flight Club, Soccer.com and more</p>
+        <p className="mt-2 text-xs text-[#6a6a6f]">© 2026 SneakersForLess. Not affiliated with any retailer.</p>
       </footer>
     </div>
   )
