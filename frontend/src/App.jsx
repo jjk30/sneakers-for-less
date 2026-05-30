@@ -388,9 +388,7 @@ function App() {
         {/* Row 1: logo + auth */}
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-5 py-4">
           <button type="button" onClick={goHome} className="flex items-center gap-2 whitespace-nowrap text-xl font-extrabold tracking-tight sm:text-2xl">
-            <span className="text-2xl sm:text-3xl" aria-hidden="true">👟</span>
-            <span className="text-orange-500">SNEAKERS</span>
-            <span className="text-white">FOR LESS</span>
+            <img src="/logo.png" alt="Sneakers For Less" className="h-9 w-auto sm:h-12" />
           </button>
 
           {user ? (
