@@ -196,11 +196,13 @@ function App() {
   const [profileTab, setProfileTab] = useState(initialRoute?.type === 'account' ? initialRoute.value : 'favorites')
   const [priceAlerts, setPriceAlerts] = useState([])
 
-  // Account dropdown (header) + sign-out overlay
+  // Header dropdowns (account + wishlist preview) + sign-out overlay
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [wishlistMenuOpen, setWishlistMenuOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [signOutDone, setSignOutDone] = useState(false)
   const accountMenuRef = useRef(null)
+  const wishlistMenuRef = useRef(null)
   const signingOutRef = useRef(false)
 
   useEffect(() => {
@@ -421,15 +423,18 @@ function App() {
     signingOutRef.current = false
   }
 
-  // Close the account dropdown on outside click or Escape.
+  // Close the header dropdowns (account + wishlist) on outside click or Escape.
   useEffect(() => {
-    if (!accountMenuOpen) return
-    const onMouseDown = (e) => { if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) setAccountMenuOpen(false) }
-    const onKeyDown = (e) => { if (e.key === 'Escape') setAccountMenuOpen(false) }
+    if (!accountMenuOpen && !wishlistMenuOpen) return
+    const onMouseDown = (e) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) setAccountMenuOpen(false)
+      if (wishlistMenuRef.current && !wishlistMenuRef.current.contains(e.target)) setWishlistMenuOpen(false)
+    }
+    const onKeyDown = (e) => { if (e.key === 'Escape') { setAccountMenuOpen(false); setWishlistMenuOpen(false) } }
     document.addEventListener('mousedown', onMouseDown)
     document.addEventListener('keydown', onKeyDown)
     return () => { document.removeEventListener('mousedown', onMouseDown); document.removeEventListener('keydown', onKeyDown) }
-  }, [accountMenuOpen])
+  }, [accountMenuOpen, wishlistMenuOpen])
 
   const resetAuthForm = () => {
     setAuthEmail(''); setAuthPassword(''); setAuthConfirm(''); setAuthError(''); setAuthSuccess('')
@@ -470,7 +475,7 @@ function App() {
     catch (e) { console.error('Failed to remove alert:', e) }
   }
 
-  const openProfile = () => { setShowProfile(true); setHasSearched(false); window.history.pushState({ view: 'account', tab: profileTab }, '', `?view=account&tab=${profileTab}`) }
+  const openProfile = (tab) => { const target = typeof tab === 'string' ? tab : profileTab; setShowProfile(true); setHasSearched(false); setProfileTab(target); window.history.pushState({ view: 'account', tab: target }, '', `?view=account&tab=${target}`) }
 
   const sortProducts = (products) => {
     const arr = [...products]
@@ -530,18 +535,55 @@ function App() {
           {/* Right: wishlist + account */}
           {user ? (
             <div className="flex items-center gap-2">
-              {/* Wishlist */}
-              <button type="button" onClick={openProfile} aria-label="Wishlist" className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1.5 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
-                <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#8a8a8f]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-                <span className="hidden sm:inline">Wishlist</span>
-                <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-medium leading-5 text-[#2a1500]">{favorites.length}</span>
-              </button>
+              {/* Wishlist — trigger pill + preview dropdown */}
+              <div className="relative" ref={wishlistMenuRef}>
+                <button type="button" onClick={() => { setAccountMenuOpen(false); setWishlistMenuOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={wishlistMenuOpen} aria-label="Wishlist" className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1.5 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#8a8a8f]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                  <span className="hidden sm:inline">Wishlist</span>
+                  <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-medium leading-5 text-[#2a1500]">{favorites.length}</span>
+                </button>
+
+                {wishlistMenuOpen && (
+                  <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-xl border border-white/[0.08] bg-[#141416] shadow-xl">
+                    <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+                      <span className="text-sm font-medium text-[#f4f4f5]">Wishlist</span>
+                      <span className="text-xs text-[#8a8a8f]">{favorites.length} saved</span>
+                    </div>
+                    {favorites.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-sm text-[#8a8a8f]">No saved pairs yet</div>
+                    ) : (
+                      <div className="max-h-80 overflow-auto p-1">
+                        {favorites.map((fav) => (
+                          <div key={fav.id} className="flex items-center gap-3 rounded-[10px] px-2 py-2 transition hover:bg-white/[0.04]">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white p-1">
+                              {fav.image && <img src={fav.image} alt={fav.name} loading="lazy" className="h-full w-full object-contain" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-[10px] uppercase tracking-[0.08em] text-[#7a7a80]">{fav.brand}</div>
+                              <div className="truncate text-[13px] text-[#f4f4f5]">{fav.name}</div>
+                              <div className="text-[13px] font-medium text-[#f4f4f5]">${fav.lowest_price}</div>
+                            </div>
+                            <button type="button" onClick={() => toggleFavorite(fav)} aria-label="Remove from wishlist" className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#8a8a8f] transition hover:bg-red-500/10 hover:text-red-400">
+                              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="border-t border-white/[0.08] p-1">
+                      <button type="button" onClick={() => { setWishlistMenuOpen(false); openProfile('favorites') }} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-sm font-medium text-orange-500 transition hover:bg-orange-500 hover:text-[#2a1500]">
+                        View full wishlist
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Account dropdown — trigger pill + menu (behavior unchanged) */}
               <div className="relative" ref={accountMenuRef}>
-                <button type="button" onClick={() => setAccountMenuOpen((o) => !o)} aria-haspopup="menu" aria-expanded={accountMenuOpen} className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] py-1 pl-1 pr-2 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
+                <button type="button" onClick={() => { setWishlistMenuOpen(false); setAccountMenuOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={accountMenuOpen} className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] py-1 pl-1 pr-2 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
                   <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-500 text-[11px] font-medium uppercase leading-none text-[#2a1500]">
                     {(user.name ? user.name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') : user.email.split('@')[0].slice(0, 2)).toUpperCase()}
                     {user.photo && (
@@ -556,17 +598,47 @@ function App() {
 
                 {accountMenuOpen && (
                   <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-white/[0.08] bg-[#141416] shadow-xl">
-                    <div className="border-b border-white/[0.08] px-4 py-3" title={user.email}>
-                      <div className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-[#8a8a8f]">{user.email}</div>
+                    {/* Identity */}
+                    <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3">
+                      <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-500 text-[13px] font-medium uppercase leading-none text-[#2a1500]">
+                        {(user.name ? user.name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') : user.email.split('@')[0].slice(0, 2)).toUpperCase()}
+                        {user.photo && (
+                          <img src={user.photo} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none' }} className="absolute inset-0 h-full w-full rounded-full object-cover" />
+                        )}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-[#f4f4f5]">{user.name ? user.name.trim().split(/\s+/)[0] : user.email.split('@')[0]}</div>
+                        <div className="truncate text-xs text-[#8a8a8f]" title={user.email}>{user.email}</div>
+                      </div>
                     </div>
-                    <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:cursor-default disabled:opacity-60">
-                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
-                      Log out
-                    </button>
+                    {/* Menu rows */}
+                    <div className="p-1">
+                      <button type="button" role="menuitem" onClick={() => { setAccountMenuOpen(false); openProfile('favorites') }} className="flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-sm text-[#f4f4f5] transition hover:bg-orange-500 hover:text-[#2a1500]">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        My account
+                      </button>
+                      <button type="button" role="menuitem" onClick={() => { setAccountMenuOpen(false); openProfile('settings') }} className="flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-sm text-[#f4f4f5] transition hover:bg-orange-500 hover:text-[#2a1500]">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                        Settings
+                      </button>
+                    </div>
+                    {/* Divider + Log out */}
+                    <div className="border-t border-white/[0.08] p-1">
+                      <button type="button" role="menuitem" onClick={handleSignOut} disabled={signingOut} className="flex w-full cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:cursor-default disabled:opacity-60">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                          <polyline points="16 17 21 12 16 7" />
+                          <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        Log out
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
