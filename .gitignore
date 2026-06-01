@@ -18,3 +18,7 @@ __pycache__/
 # Env
 .env
 .env.*
+
+# Build artifacts
+build_pkg/
+*.zip
