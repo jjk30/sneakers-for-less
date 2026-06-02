@@ -678,13 +678,7 @@ function App() {
                     </button>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1 text-[13px] text-[#6a6a6f]">
-                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                        <polyline points="17 6 23 6 23 12" />
-                      </svg>
-                      Popular
-                    </span>
+                    <span className="text-[13px] text-[#6a6a6f]">Popular</span>
                     {['Jordan 1', 'Dunk Low', 'Yeezy 350', 'Travis Scott', 'Air Max 95', 'Air Force 1'].map((tag) => (
                       <button key={tag} type="button" onClick={() => { quickSearch(tag); setSearchMenuOpen(false) }} className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1 text-[13px] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">
                         <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#8a8a8f]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
