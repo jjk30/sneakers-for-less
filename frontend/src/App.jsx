@@ -205,6 +205,19 @@ function App() {
   const wishlistMenuRef = useRef(null)
   const signingOutRef = useRef(false)
 
+  // Navbar hover dropdowns (Categories / Brands) — JS-driven open with a small
+  // close delay so the cursor can travel from the label down onto the items.
+  const [openNav, setOpenNav] = useState(null) // 'categories' | 'brands' | null
+  const navCloseTimer = useRef(null)
+  const openNavMenu = (name) => {
+    if (navCloseTimer.current) { clearTimeout(navCloseTimer.current); navCloseTimer.current = null }
+    setOpenNav(name) // mutually exclusive: only one nav menu open at a time
+  }
+  const closeNavMenuSoon = () => {
+    if (navCloseTimer.current) clearTimeout(navCloseTimer.current)
+    navCloseTimer.current = setTimeout(() => setOpenNav(null), 150)
+  }
+
   useEffect(() => {
     fetchInitialData()
     fetchHotDeals()
@@ -505,28 +518,34 @@ function App() {
             </button>
             <nav className="hidden items-center gap-1 sm:flex">
               {/* Categories — quiet nav link; dropdown behavior unchanged */}
-              <div className="group relative">
+              <div className="group relative" onMouseEnter={() => openNavMenu('categories')} onMouseLeave={closeNavMenuSoon}>
                 <button type="button" className="flex cursor-pointer items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[13px] text-[#8a8a8f] transition hover:text-[#f4f4f5]">
                   Categories
                   <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
                 </button>
-                <div className="invisible absolute left-0 top-full z-50 mt-1 max-h-80 w-56 overflow-auto rounded-xl border border-white/[0.08] bg-[#141416] p-1 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  {categories.map((cat) => (
-                    <button key={cat} type="button" onClick={() => browseByCategory(cat)} className="block w-full cursor-pointer rounded-[10px] px-3 py-2 text-left text-sm text-[#8a8a8f] transition hover:bg-orange-500 hover:text-[#2a1500]">{cat}</button>
-                  ))}
+                {/* Outer = positioner + transparent pt-1 bridge (no margin gap); inner keeps the styling */}
+                <div className={`absolute left-0 top-full z-50 pt-1 transition group-focus-within:visible group-focus-within:opacity-100 ${openNav === 'categories' ? 'visible opacity-100' : 'invisible opacity-0'}`}>
+                  <div className="max-h-80 w-56 overflow-auto rounded-xl border border-white/[0.08] bg-[#141416] p-1 shadow-xl">
+                    {categories.map((cat) => (
+                      <button key={cat} type="button" onClick={() => browseByCategory(cat)} className="block w-full cursor-pointer rounded-[10px] px-3 py-2 text-left text-sm text-[#8a8a8f] transition hover:bg-orange-500 hover:text-[#2a1500]">{cat}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Brands — quiet nav link; dropdown behavior unchanged */}
-              <div className="group relative">
+              <div className="group relative" onMouseEnter={() => openNavMenu('brands')} onMouseLeave={closeNavMenuSoon}>
                 <button type="button" className="flex cursor-pointer items-center gap-1 rounded-[10px] px-2.5 py-1.5 text-[13px] text-[#8a8a8f] transition hover:text-[#f4f4f5]">
                   Brands
                   <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
                 </button>
-                <div className="invisible absolute left-0 top-full z-50 mt-1 max-h-80 w-56 overflow-auto rounded-xl border border-white/[0.08] bg-[#141416] p-1 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  {brands.map((brand) => (
-                    <button key={brand} type="button" onClick={() => browseByBrand(brand)} className="block w-full cursor-pointer rounded-[10px] px-3 py-2 text-left text-sm text-[#8a8a8f] transition hover:bg-orange-500 hover:text-[#2a1500]">{brand}</button>
-                  ))}
+                {/* Outer = positioner + transparent pt-1 bridge (no margin gap); inner keeps the styling */}
+                <div className={`absolute left-0 top-full z-50 pt-1 transition group-focus-within:visible group-focus-within:opacity-100 ${openNav === 'brands' ? 'visible opacity-100' : 'invisible opacity-0'}`}>
+                  <div className="max-h-80 w-56 overflow-auto rounded-xl border border-white/[0.08] bg-[#141416] p-1 shadow-xl">
+                    {brands.map((brand) => (
+                      <button key={brand} type="button" onClick={() => browseByBrand(brand)} className="block w-full cursor-pointer rounded-[10px] px-3 py-2 text-left text-sm text-[#8a8a8f] transition hover:bg-orange-500 hover:text-[#2a1500]">{brand}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </nav>
