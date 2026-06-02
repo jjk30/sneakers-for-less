@@ -359,10 +359,11 @@ def get_user_data(email):
         user = response['Item']
         favorites = user.get('favorites', '[]')
         alerts = user.get('priceAlerts', '[]')
-        
+
         return {
             'favorites': json.loads(favorites) if isinstance(favorites, str) else favorites,
-            'priceAlerts': json.loads(alerts) if isinstance(alerts, str) else alerts
+            'priceAlerts': json.loads(alerts) if isinstance(alerts, str) else alerts,
+            'emailNotifications': bool(user.get('emailNotifications', True))
         }
     except Exception as e:
         print(f"Error getting user data: {e}")
@@ -390,6 +391,18 @@ def save_user_alerts(email, alerts):
         return True
     except Exception as e:
         print(f"Error saving alerts: {e}")
+        return False
+
+def save_user_settings(email, email_notifications):
+    try:
+        users_table.update_item(
+            Key={'email': email.lower()},
+            UpdateExpression='SET emailNotifications = :n',
+            ExpressionAttributeValues={':n': bool(email_notifications)}
+        )
+        return True
+    except Exception as e:
+        print(f"Error saving settings: {e}")
         return False
 
 # ============================================
@@ -626,7 +639,23 @@ def handler(event, context):
             if save_user_alerts(email, alerts):
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'success': True})}
             return {'statusCode': 500, 'headers': headers, 'body': json.dumps({'error': 'Failed to save'})}
-        
+
+        # ============================================
+        # USER SETTINGS
+        # ============================================
+        if path == '/api/user/settings' and http_method == 'POST':
+            email = get_verified_email(event)
+            if not email:
+                return {'statusCode': 401, 'headers': headers, 'body': json.dumps({'error': 'Unauthorized'})}
+
+            body = event.get('body', '{}')
+            data = json.loads(body) if isinstance(body, str) else body
+            email_notifications = bool(data.get('emailNotifications', True))
+
+            if save_user_settings(email, email_notifications):
+                return {'statusCode': 200, 'headers': headers, 'body': json.dumps({'success': True, 'emailNotifications': email_notifications})}
+            return {'statusCode': 500, 'headers': headers, 'body': json.dumps({'error': 'Failed to save'})}
+
         # ============================================
         # ADMIN - Add/Update Product
         # ============================================
