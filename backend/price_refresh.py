@@ -92,7 +92,13 @@ def _rescale_quotes(quotes, old_low, new_low):
 # ---- Pluggable price source -------------------------------------------------
 class PriceSource(abc.ABC):
     """A source of fresh prices. Implement get_price to plug in a new backend
-    (scraper, partner API, ...) without changing the handler."""
+    (scraper, partner API, ...) without changing the handler.
+
+    is_production gates the safety guard in handler(): a non-production source
+    (the default) is refused against real AWS. Real sources must set it True.
+    """
+
+    is_production = False
 
     @abc.abstractmethod
     def get_price(self, product) -> float:
@@ -103,7 +109,11 @@ class PriceSource(abc.ABC):
 class MockPriceSource(PriceSource):
     """Synthetic source for local testing. Jitters the current price by a few
     percent, with an occasional larger drop, so price changes and drops are
-    visible when testing. Replace with a real source later."""
+    visible when testing. Replace with a real source later.
+
+    Non-production: handler() refuses to run this against real AWS."""
+
+    is_production = False
 
     def __init__(self, seed=None):
         self._rng = random.Random(seed)
@@ -126,9 +136,21 @@ def handler(event, context, source: PriceSource = None):
     source is injectable for tests; defaults to MockPriceSource so this module
     is runnable as-is. Returns a summary dict.
     """
-    db = _client()
-    endpoint = os.environ.get("DYNAMODB_ENDPOINT") or f"AWS default ({REGION})"
     source = source or MockPriceSource()
+    local_endpoint = os.environ.get("DYNAMODB_ENDPOINT")
+
+    # Safety guard: never let a non-production source write to real AWS.
+    if not getattr(source, "is_production", False) and not local_endpoint:
+        raise RuntimeError(
+            f"Refusing to run: non-production price source "
+            f"({type(source).__name__}) is targeting real AWS because "
+            f"DYNAMODB_ENDPOINT is unset. Set DYNAMODB_ENDPOINT "
+            f"(e.g. http://localhost:8000) to run locally, or use a "
+            f"production price source to write to AWS."
+        )
+
+    db = _client()
+    endpoint = local_endpoint or f"AWS default ({REGION})"
     log.info("Price refresh starting (endpoint: %s, source: %s)",
              endpoint, type(source).__name__)
 
@@ -167,4 +189,8 @@ def handler(event, context, source: PriceSource = None):
 
 
 if __name__ == "__main__":
+    # Local is the easy, safe default: target DynamoDB Local unless the caller
+    # explicitly opts into another endpoint. Any prod write requires setting
+    # DYNAMODB_ENDPOINT to a real AWS target AND a production price source.
+    os.environ.setdefault("DYNAMODB_ENDPOINT", "http://localhost:8000")
     handler({}, None)
