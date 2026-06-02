@@ -273,6 +273,7 @@ function App() {
   const [showProfile, setShowProfile] = useState(initialRoute?.type === 'account' && !!localStorage.getItem('sneakersUser'))
   const [profileTab, setProfileTab] = useState(initialRoute?.type === 'account' ? initialRoute.value : 'favorites')
   const [priceAlerts, setPriceAlerts] = useState([])
+  const [emailNotifications, setEmailNotifications] = useState(true)
 
   // Header dropdowns (account + wishlist preview + search) + sign-out overlay
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
@@ -388,7 +389,7 @@ function App() {
     try {
       const token = await auth.currentUser?.getIdToken()
       const res = await fetch(`${API_URL}/api/user/data?email=${encodeURIComponent(email)}`, { headers: { Authorization: `Bearer ${token}` } })
-      if (res.ok) { const data = await res.json(); setFavorites(data.favorites || []); setPriceAlerts(data.priceAlerts || []) }
+      if (res.ok) { const data = await res.json(); setFavorites(data.favorites || []); setPriceAlerts(data.priceAlerts || []); setEmailNotifications(data.emailNotifications !== false) }
     } catch (e) { console.error('Failed to load user data:', e) }
   }
 
@@ -502,7 +503,7 @@ function App() {
 
   const handleLogout = async () => {
     try { await signOut(auth) } catch (e) { console.error(e) }
-    setUser(null); setFavorites([]); setPriceAlerts([]); localStorage.removeItem('sneakersUser')
+    setUser(null); setFavorites([]); setPriceAlerts([]); setEmailNotifications(true); localStorage.removeItem('sneakersUser')
     // Always land on a clean home view, regardless of where logout was triggered
     // (brand, category, search, product detail, or My Account).
     resetToHome()                 // clears brand, category, search, hasSearched, results, allProducts, sneakerInfo, showProfile
@@ -583,6 +584,17 @@ function App() {
     setPriceAlerts(newAlerts)
     try { const token = await auth.currentUser?.getIdToken(); await fetch(`${API_URL}/api/user/alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email: user.email, alerts: newAlerts }) }) }
     catch (e) { console.error('Failed to remove alert:', e) }
+  }
+
+  // Email Notifications toggle: optimistic flip, persist, revert on failure.
+  const updateEmailNotifications = async (next) => {
+    const prev = emailNotifications
+    setEmailNotifications(next)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      const res = await fetch(`${API_URL}/api/user/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ emailNotifications: next }) })
+      if (!res.ok) throw new Error('Failed to save settings')
+    } catch (e) { console.error('Failed to save settings:', e); setEmailNotifications(prev) }
   }
 
   const openProfile = (tab) => { const target = typeof tab === 'string' ? tab : profileTab; setShowProfile(true); setHasSearched(false); setProfileTab(target); window.history.pushState({ view: 'account', tab: target }, '', `?view=account&tab=${target}`) }
@@ -950,7 +962,7 @@ function App() {
           )}
           {profileTab === 'settings' && (
             <div className="settings-section">
-              <div className="setting-item"><div><h4>Email Notifications</h4><p>Get notified when prices drop on your alerts</p></div><label className="toggle"><input type="checkbox" defaultChecked /><span className="slider"></span></label></div>
+              <div className="setting-item"><div><h4>Email Notifications</h4><p>Get notified when prices drop on your alerts</p></div><label className="toggle"><input type="checkbox" checked={emailNotifications} onChange={(e) => updateEmailNotifications(e.target.checked)} /><span className="slider"></span></label></div>
               <div className="setting-item"><div><h4>Account</h4></div><button className="danger-btn" onClick={handleLogout}>Logout</button></div>
             </div>
           )}
