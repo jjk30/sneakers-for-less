@@ -35,6 +35,83 @@ const BRAND_LOGOS = [
   { name: 'Converse', logo: 'https://www.logo.wine/a/logo/Converse_(shoe_company)/Converse_(shoe_company)-Logo.wine.svg' }
 ]
 
+// ---- Client-side "similar shoes" scoring (no backend) -----------------------
+// Used only on a zero-result search to suggest relevant catalog items.
+const SIMILAR_STOPWORDS = new Set(['the', 'a', 'an', 'shoe', 'shoes', 'sneaker', 'sneakers', 'men', 'mens', 'women', 'womens'])
+
+const normalizeText = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+const tokenizeText = (s) => normalizeText(s).split(' ').filter((t) => t && !SIMILAR_STOPWORDS.has(t))
+
+// Levenshtein edit distance (small strings only).
+const editDistance = (a, b) => {
+  if (a === b) return 0
+  const m = a.length, n = b.length
+  if (!m) return n
+  if (!n) return m
+  let prev = Array.from({ length: n + 1 }, (_, i) => i)
+  for (let i = 1; i <= m; i++) {
+    const cur = [i]
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+    }
+    prev = cur
+  }
+  return prev[n]
+}
+
+// Typo-tolerant token equality: exact, or normalized edit distance within tol
+// (so "addidas" still matches "adidas"). Short tokens must match exactly.
+const fuzzyEq = (a, b, tol = 0.34) => {
+  if (a === b) return true
+  const maxLen = Math.max(a.length, b.length)
+  if (maxLen < 4) return false
+  return editDistance(a, b) / maxLen <= tol
+}
+
+// Does the query contain this phrase? Every phrase token must fuzzy-appear.
+const phraseInQuery = (phrase, qTokens) => {
+  const pTokens = tokenizeText(phrase)
+  return pTokens.length > 0 && pTokens.every((pt) => qTokens.some((qt) => fuzzyEq(pt, qt)))
+}
+
+// Explicit price hint only (e.g. "$120", "under 150") — ignores bare model numbers.
+const queryPriceHint = (rawQuery) => {
+  const m = (rawQuery || '').match(/\$\s?(\d{2,4})|\b(?:under|below|around|about|over|max)\s+\$?(\d{2,4})/i)
+  return m ? Number(m[1] || m[2]) : null
+}
+
+const SIMILAR_WEIGHTS = { brand: 5, category: 2, nameToken: 1.5, nameTokenCap: 3, price: 1 }
+const SIMILAR_MIN_SCORE = 2
+
+const scoreProduct = (product, qTokens, priceHint) => {
+  let score = 0
+  if (product.brand && phraseInQuery(product.brand, qTokens)) score += SIMILAR_WEIGHTS.brand
+  if (product.category && phraseInQuery(product.category, qTokens)) score += SIMILAR_WEIGHTS.category
+  const nameTokens = tokenizeText(product.name)
+  let matched = 0
+  for (const qt of qTokens) if (nameTokens.some((nt) => fuzzyEq(qt, nt))) matched++
+  if (matched) score += Math.min(matched, SIMILAR_WEIGHTS.nameTokenCap) * SIMILAR_WEIGHTS.nameToken
+  if (priceHint && typeof product.lowest_price === 'number') {
+    const diff = Math.abs(product.lowest_price - priceHint) / priceHint
+    if (diff < 1) score += (1 - diff) * SIMILAR_WEIGHTS.price
+  }
+  return score
+}
+
+// Rank the catalog against the query; return top 4 over threshold, else fall
+// back to popular/hot-deal items so the page is never a dead end.
+const computeSimilarShoes = (query, catalog, hotDeals) => {
+  const qTokens = tokenizeText(query)
+  const priceHint = queryPriceHint(query)
+  const scored = (catalog || [])
+    .map((p) => ({ p, s: scoreProduct(p, qTokens, priceHint) }))
+    .filter((x) => x.s >= SIMILAR_MIN_SCORE)
+    .sort((a, b) => b.s - a.s)
+  if (scored.length > 0) return { items: scored.slice(0, 4).map((x) => x.p), fallback: false }
+  return { items: (hotDeals || []).slice(0, 4), fallback: true }
+}
+
 function ProductCard({ product, isFav, onToggleFavorite, onCompare }) {
   const [imgLoaded, setImgLoaded] = useState(false)
   const [imgError, setImgError] = useState(false)
@@ -178,6 +255,7 @@ function App() {
   
   const [hotDeals, setHotDeals] = useState([])
   const [dealsLoading, setDealsLoading] = useState(false)
+  const [catalog, setCatalog] = useState([])  // full product list for client-side "similar shoes"
   
   const [user, setUser] = useState(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -221,6 +299,7 @@ function App() {
   useEffect(() => {
     fetchInitialData()
     fetchHotDeals()
+    fetchCatalog()
     const savedUser = localStorage.getItem('sneakersUser')
     if (savedUser) {
       const userData = JSON.parse(savedUser)
@@ -289,6 +368,14 @@ function App() {
       if (response.ok) { const data = await response.json(); setHotDeals(data.deals || []) }
     } catch (e) { console.error('Failed to fetch deals:', e) }
     finally { setDealsLoading(false) }
+  }
+
+  // Load the full catalog once for client-side "similar shoes" suggestions.
+  const fetchCatalog = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/products`)
+      if (response.ok) { const data = await response.json(); setCatalog(data.products || []) }
+    } catch (e) { console.error('Failed to fetch catalog:', e) }
   }
 
   const loadUserData = async (email) => {
@@ -962,7 +1049,33 @@ function App() {
                     </div>
                   </div>
                 ) : (
-                  <div className="no-results"><p>No results found for "{searchQuery}"</p><p className="hint">Try searching for "Jordan", "Nike", "Travis Scott", or browse by category above</p></div>
+                  (() => {
+                    const { items: similar, fallback } = computeSimilarShoes(searchQuery, catalog, hotDeals)
+                    return (
+                      <>
+                        <div className="no-results">
+                          <p>Sorry — we don't have "{searchQuery}" yet.</p>
+                          <p className="hint">Try a different name, or browse by brand and category above.</p>
+                        </div>
+                        {similar.length > 0 && (
+                          <div className="mt-2">
+                            <h3 className="mb-5 text-sm text-[#8a8a8f]">{fallback ? 'You might like' : 'Similar shoes you might like'}</h3>
+                            <div className="grid">
+                              {similar.map((product) => (
+                                <ProductCard
+                                  key={product.id}
+                                  product={product}
+                                  isFav={isFavorite(product.id)}
+                                  onToggleFavorite={() => toggleFavorite(product)}
+                                  onCompare={() => selectProduct(product.id)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()
                 )}
               </div>
             )}
