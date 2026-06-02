@@ -274,13 +274,16 @@ function App() {
   const [profileTab, setProfileTab] = useState(initialRoute?.type === 'account' ? initialRoute.value : 'favorites')
   const [priceAlerts, setPriceAlerts] = useState([])
 
-  // Header dropdowns (account + wishlist preview) + sign-out overlay
+  // Header dropdowns (account + wishlist preview + search) + sign-out overlay
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [wishlistMenuOpen, setWishlistMenuOpen] = useState(false)
+  const [searchMenuOpen, setSearchMenuOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [signOutDone, setSignOutDone] = useState(false)
   const accountMenuRef = useRef(null)
   const wishlistMenuRef = useRef(null)
+  const searchMenuRef = useRef(null)
+  const searchInputRef = useRef(null)
   const signingOutRef = useRef(false)
 
   // Navbar hover dropdowns (Categories / Brands) — JS-driven open with a small
@@ -523,18 +526,22 @@ function App() {
     signingOutRef.current = false
   }
 
-  // Close the header dropdowns (account + wishlist) on outside click or Escape.
+  // Close the header dropdowns (account + wishlist + search) on outside click or Escape.
   useEffect(() => {
-    if (!accountMenuOpen && !wishlistMenuOpen) return
+    if (!accountMenuOpen && !wishlistMenuOpen && !searchMenuOpen) return
     const onMouseDown = (e) => {
       if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) setAccountMenuOpen(false)
       if (wishlistMenuRef.current && !wishlistMenuRef.current.contains(e.target)) setWishlistMenuOpen(false)
+      if (searchMenuRef.current && !searchMenuRef.current.contains(e.target)) setSearchMenuOpen(false)
     }
-    const onKeyDown = (e) => { if (e.key === 'Escape') { setAccountMenuOpen(false); setWishlistMenuOpen(false) } }
+    const onKeyDown = (e) => { if (e.key === 'Escape') { setAccountMenuOpen(false); setWishlistMenuOpen(false); setSearchMenuOpen(false) } }
     document.addEventListener('mousedown', onMouseDown)
     document.addEventListener('keydown', onKeyDown)
     return () => { document.removeEventListener('mousedown', onMouseDown); document.removeEventListener('keydown', onKeyDown) }
-  }, [accountMenuOpen, wishlistMenuOpen])
+  }, [accountMenuOpen, wishlistMenuOpen, searchMenuOpen])
+
+  // Autofocus the header search input when the panel opens.
+  useEffect(() => { if (searchMenuOpen) searchInputRef.current?.focus() }, [searchMenuOpen])
 
   const resetAuthForm = () => {
     setAuthEmail(''); setAuthPassword(''); setAuthConfirm(''); setAuthError(''); setAuthSuccess('')
@@ -585,11 +592,6 @@ function App() {
     return arr
   }
 
-  // A single-product detail/compare view is open (sneakerInfo + store results, not a grid)
-  // AND the URL says it's a product page (?product=) rather than a search — used only to
-  // hide the hero/search block there. Search and grid results keep the hero.
-  const onProductDetail = !!sneakerInfo && results.length > 0 && allProducts.length === 0 && new URLSearchParams(window.location.search).has('product')
-
   return (
     <div className="app bg-[#0a0a0b] text-[#f4f4f5]">
       <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#0a0a0b]/95 backdrop-blur">
@@ -638,12 +640,55 @@ function App() {
             </nav>
           </div>
 
-          {/* Right: wishlist + account */}
-          {user ? (
+          {/* Right: search + wishlist + account */}
+          <div className="flex items-center gap-2">
+            {/* Search — icon button + dropdown panel (reuses searchQuery + handleSearch + quickSearch) */}
+            <div className="relative" ref={searchMenuRef}>
+              <button type="button" onClick={() => { setAccountMenuOpen(false); setWishlistMenuOpen(false); setSearchMenuOpen((o) => !o) }} aria-haspopup="dialog" aria-expanded={searchMenuOpen} aria-label="Search" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/[0.08] bg-[#141416] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">
+                <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+              </button>
+
+              {searchMenuOpen && (
+                <div role="dialog" aria-label="Search" className="absolute right-0 top-full z-50 mt-2 w-[min(92vw,22rem)] rounded-xl border border-white/[0.08] bg-[#141416] p-3 shadow-xl">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#6a6a6f]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        autoComplete="off"
+                        placeholder="Search sneakers, brands, or styles…"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(); setSearchMenuOpen(false) } }}
+                        className="w-full rounded-[12px] border border-white/[0.08] bg-[#0a0a0b] py-2.5 pl-10 pr-3 text-sm text-[#f4f4f5] placeholder:text-[#6a6a6f] transition focus:border-white/[0.14] focus:outline-none"
+                      />
+                    </div>
+                    <button type="button" onClick={() => { handleSearch(); setSearchMenuOpen(false) }} className="shrink-0 cursor-pointer rounded-[12px] bg-orange-500 px-4 py-2.5 text-sm font-medium text-[#2a1500] transition hover:bg-orange-400">
+                      {loading ? 'Searching…' : 'Search'}
+                    </button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-[13px] text-[#6a6a6f]">Popular</span>
+                    {['Jordan 1', 'Dunk Low', 'Yeezy 350', 'Travis Scott', 'Air Max 95', 'Air Force 1'].map((tag) => (
+                      <button key={tag} type="button" onClick={() => { quickSearch(tag); setSearchMenuOpen(false) }} className="cursor-pointer rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1 text-[13px] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">{tag}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {user ? (
             <div className="flex items-center gap-2">
               {/* Wishlist — trigger pill + preview dropdown */}
               <div className="relative" ref={wishlistMenuRef}>
-                <button type="button" onClick={() => { setAccountMenuOpen(false); setWishlistMenuOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={wishlistMenuOpen} aria-label="Wishlist" className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1.5 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
+                <button type="button" onClick={() => { setSearchMenuOpen(false); setAccountMenuOpen(false); setWishlistMenuOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={wishlistMenuOpen} aria-label="Wishlist" className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1.5 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
                   <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#8a8a8f]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
@@ -689,7 +734,7 @@ function App() {
 
               {/* Account dropdown — trigger pill + menu (behavior unchanged) */}
               <div className="relative" ref={accountMenuRef}>
-                <button type="button" onClick={() => { setWishlistMenuOpen(false); setAccountMenuOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={accountMenuOpen} className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] py-1 pl-1 pr-2 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
+                <button type="button" onClick={() => { setSearchMenuOpen(false); setWishlistMenuOpen(false); setAccountMenuOpen((o) => !o) }} aria-haspopup="menu" aria-expanded={accountMenuOpen} className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.08] bg-[#141416] py-1 pl-1 pr-2 text-[13px] text-[#f4f4f5] transition hover:border-white/[0.14]">
                   <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-500 text-[11px] font-medium uppercase leading-none text-[#2a1500]">
                     {(user.name ? user.name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('') : user.email.split('@')[0].slice(0, 2)).toUpperCase()}
                     {user.photo && (
@@ -754,6 +799,7 @@ function App() {
               Login / Sign Up
             </button>
           )}
+          </div>
         </div>
       </header>
 
@@ -905,8 +951,8 @@ function App() {
       <main className="main">
         {!showProfile && (
           <>
-            {!onProductDetail && (
-            <section className={`mx-auto w-full max-w-2xl px-6 text-center ${hasSearched ? 'py-6' : 'py-12 sm:py-16'}`}>
+            {!hasSearched && (
+            <section className="mx-auto w-full max-w-2xl px-6 py-12 text-center sm:py-16">
               {!hasSearched && (
                 <>
                   <p className="text-xs font-medium uppercase tracking-[0.12em] text-orange-500">10+ stores, one search</p>
