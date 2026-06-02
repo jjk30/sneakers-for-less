@@ -278,6 +278,9 @@ function App() {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [wishlistMenuOpen, setWishlistMenuOpen] = useState(false)
   const [searchMenuOpen, setSearchMenuOpen] = useState(false)
+  // Header search input is decoupled from the shared searchQuery so it never
+  // shows a product slug — it binds only to the active ?search= query.
+  const [headerSearchQuery, setHeaderSearchQuery] = useState('')
   const [signingOut, setSigningOut] = useState(false)
   const [signOutDone, setSignOutDone] = useState(false)
   const accountMenuRef = useRef(null)
@@ -644,7 +647,7 @@ function App() {
           <div className="flex items-center gap-2">
             {/* Search — icon button + dropdown panel (reuses searchQuery + handleSearch + quickSearch) */}
             <div className="relative" ref={searchMenuRef}>
-              <button type="button" onClick={() => { setAccountMenuOpen(false); setWishlistMenuOpen(false); setSearchMenuOpen((o) => !o) }} aria-haspopup="dialog" aria-expanded={searchMenuOpen} aria-label="Search" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/[0.08] bg-[#141416] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">
+              <button type="button" onClick={() => { const opening = !searchMenuOpen; setAccountMenuOpen(false); setWishlistMenuOpen(false); setSearchMenuOpen((o) => !o); if (opening) setHeaderSearchQuery(new URLSearchParams(window.location.search).get('search') || '') }} aria-haspopup="dialog" aria-expanded={searchMenuOpen} aria-label="Search" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/[0.08] bg-[#141416] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">
                 <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.35-4.35" />
@@ -664,20 +667,32 @@ function App() {
                         type="text"
                         autoComplete="off"
                         placeholder="Search sneakers, brands, or styles…"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(); setSearchMenuOpen(false) } }}
+                        value={headerSearchQuery}
+                        onChange={(e) => setHeaderSearchQuery(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { const q = headerSearchQuery.trim(); if (q) { quickSearch(q); setSearchMenuOpen(false) } } }}
                         className="w-full rounded-[12px] border border-white/[0.08] bg-[#0a0a0b] py-2.5 pl-10 pr-3 text-sm text-[#f4f4f5] placeholder:text-[#6a6a6f] transition focus:border-white/[0.14] focus:outline-none"
                       />
                     </div>
-                    <button type="button" onClick={() => { handleSearch(); setSearchMenuOpen(false) }} className="shrink-0 cursor-pointer rounded-[12px] bg-orange-500 px-4 py-2.5 text-sm font-medium text-[#2a1500] transition hover:bg-orange-400">
+                    <button type="button" onClick={() => { const q = headerSearchQuery.trim(); if (q) { quickSearch(q); setSearchMenuOpen(false) } }} className="shrink-0 cursor-pointer rounded-[12px] bg-orange-500 px-4 py-2.5 text-sm font-medium text-[#2a1500] transition hover:bg-orange-400">
                       {loading ? 'Searching…' : 'Search'}
                     </button>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="text-[13px] text-[#6a6a6f]">Popular</span>
+                    <span className="inline-flex items-center gap-1 text-[13px] text-[#6a6a6f]">
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                        <polyline points="17 6 23 6 23 12" />
+                      </svg>
+                      Popular
+                    </span>
                     {['Jordan 1', 'Dunk Low', 'Yeezy 350', 'Travis Scott', 'Air Max 95', 'Air Force 1'].map((tag) => (
-                      <button key={tag} type="button" onClick={() => { quickSearch(tag); setSearchMenuOpen(false) }} className="cursor-pointer rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1 text-[13px] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">{tag}</button>
+                      <button key={tag} type="button" onClick={() => { quickSearch(tag); setSearchMenuOpen(false) }} className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/[0.08] bg-[#141416] px-3 py-1 text-[13px] text-[#8a8a8f] transition hover:border-white/[0.14] hover:text-[#f4f4f5]">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#8a8a8f]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                          <polyline points="17 6 23 6 23 12" />
+                        </svg>
+                        {tag}
+                      </button>
                     ))}
                   </div>
                 </div>
