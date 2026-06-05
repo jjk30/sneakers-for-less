@@ -114,7 +114,7 @@ def _build_email(to_email, alert, lowest):
 
     subject = f"Price drop: {name} is now ${low_s}"
     text = (
-        "Good news — a pair on your wishlist just dropped in price.\n\n"
+        "Good news — a pair you're tracking just dropped in price.\n\n"
         f"{name}\n"
         f"New lowest price: ${low_s}\n"
         f"Your target price: ${tgt_s}\n\n"
@@ -124,7 +124,7 @@ def _build_email(to_email, alert, lowest):
         f"Unsubscribe / manage notifications: {UNSUB_URL}\n"
     )
     html = (
-        f"<p>Good news — a pair on your wishlist just dropped in price.</p>"
+        f"<p>Good news — a pair you're tracking just dropped in price.</p>"
         f"<p><strong>{name}</strong><br>"
         f"New lowest price: <strong>${low_s}</strong><br>"
         f"Your target price: ${tgt_s}</p>"
