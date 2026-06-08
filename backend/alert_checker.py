@@ -70,6 +70,23 @@ def _email_notifications_on(user_item):
     return True
 
 
+def _first_name(user_item):
+    """First name to greet this user by, or None if no name is stored.
+
+    Reads defensively from the user record: today no name field exists on the
+    sneakers-for-less-users table (register_user stores only email/password/
+    role/favorites/priceAlerts/created_at), so this returns None and the email
+    falls back to a generic greeting. It's written to pick up a stored name
+    automatically if/when name-capture is added, without further changes here.
+    """
+    for field in ("firstName", "displayName", "fullName", "name", "given_name"):
+        attr = user_item.get(field)
+        raw = attr.get("S").strip() if attr and attr.get("S") else None
+        if raw:
+            return raw.split()[0]  # first word of the stored name
+    return None
+
+
 def _parse_alerts(user_item):
     """Parse the priceAlerts JSON-string array; [] if missing/unparseable."""
     attr = user_item.get("priceAlerts")
@@ -101,34 +118,47 @@ def _product_lowest(db, product_id):
     return float(low)
 
 
-def _build_email(to_email, alert, lowest):
-    """Build a price-drop email payload for SES (plain text + simple HTML)."""
+def _build_email(to_email, alert, lowest, first_name):
+    """Build a personalized price-drop email payload for SES (text + HTML).
+
+    Every value here is pulled per recipient from the loop: `first_name` is this
+    user's stored name (None -> generic greeting), and the prices come from this
+    alert (`currentPrice` = price when the alert was created; `lowest` = the
+    current lowest price the checker computed to fire the alert).
+    """
     name = alert.get("name") or alert.get("id") or "your sneaker"
     pid = alert.get("id") or ""
     try:
         target = float(alert.get("targetPrice"))
     except (TypeError, ValueError):
         target = None
+    try:
+        original = float(alert.get("currentPrice"))
+    except (TypeError, ValueError):
+        original = None
     product_url = f"{SITE_BASE}/?product=" + urllib.parse.quote(str(pid))
-    low_s, tgt_s = _money(lowest), (_money(target) if target is not None else "—")
+    low_s = _money(lowest)
+    tgt_s = _money(target) if target is not None else "—"
+    orig_s = _money(original) if original is not None else "—"
+
+    greeting = f"Hi {first_name}," if first_name else "Hi there,"
 
     subject = f"Price drop: {name} is now ${low_s}"
     text = (
-        "Good news — a pair you're tracking just dropped in price.\n\n"
-        f"{name}\n"
-        f"New lowest price: ${low_s}\n"
-        f"Your target price: ${tgt_s}\n\n"
-        f"View deal: {product_url}\n\n"
+        f"{greeting}\n\n"
+        f"the {name} you're tracking just dropped from ${orig_s} to ${low_s}.\n"
+        f"That's at or below your target of ${tgt_s}.\n\n"
+        f"View it on SneakersForLess: {product_url}\n\n"
         "You're receiving this because email notifications are on for your "
         "SneakersForLess account.\n"
         f"Unsubscribe / manage notifications: {UNSUB_URL}\n"
     )
     html = (
-        f"<p>Good news — a pair you're tracking just dropped in price.</p>"
-        f"<p><strong>{name}</strong><br>"
-        f"New lowest price: <strong>${low_s}</strong><br>"
-        f"Your target price: ${tgt_s}</p>"
-        f'<p><a href="{product_url}">View deal</a></p>'
+        f"<p>{greeting}</p>"
+        f"<p>the <strong>{name}</strong> you're tracking just dropped from "
+        f"${orig_s} to <strong>${low_s}</strong>.<br>"
+        f"That's at or below your target of ${tgt_s}.</p>"
+        f'<p><a href="{product_url}">View it on SneakersForLess</a></p>'
         f"<p style=\"color:#888;font-size:12px\">You're receiving this because email "
         f"notifications are on for your SneakersForLess account.<br>"
         f'<a href="{UNSUB_URL}">Unsubscribe / manage notifications</a></p>'
@@ -197,6 +227,7 @@ def handler(event, context):
             if not alerts:
                 continue
 
+            first_name = _first_name(item)  # this recipient's own name, or None
             changed = False
             for alert in alerts:
                 if not isinstance(alert, dict):
@@ -229,7 +260,7 @@ def handler(event, context):
                     # Can't send; don't mark, so a configured run can still notify.
                     continue
 
-                emails.append(_build_email(email, alert, lowest))
+                emails.append(_build_email(email, alert, lowest, first_name))
                 alert["lastNotifiedPrice"] = lowest
                 alert["notifiedAt"] = _now_iso()
                 changed = True
