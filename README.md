@@ -49,6 +49,7 @@ I built it to get real practice with a full cloud setup, not just a frontend. Si
 | Hosting / CDN | Amazon S3 + CloudFront |
 | Email | Amazon SES |
 | Scheduling | Amazon EventBridge |
+| Access control | AWS IAM (per-service least-privilege roles) |
 | CI/CD | GitHub Actions |
 | Local dev | Docker (DynamoDB Local + reproducible Lambda builds) |
 
@@ -57,11 +58,11 @@ I built it to get real practice with a full cloud setup, not just a frontend. Si
 ## System design
 
 ```
-                         ┌────────────┐
-                         │    User     │   opens the site
-                         └──────┬──────┘
-                                │
-                                ▼
+                            ┌────────────┐
+                            │    User     │   opens the site
+                            └──────┬──────┘
+                                   │
+                                   ▼
                          ┌───────────────┐   ID token    ┌──────────────────┐
                          │    Browser     │◀─────────────│   Firebase Auth   │
                          └──┬─────────┬───┘              └──────────────────┘
@@ -81,10 +82,10 @@ I built it to get real practice with a full cloud setup, not just a frontend. Si
                                           │   price-history                │
                                           └───────────────┬───────────────┘
                                                           ▲ read / write
-   ─────────────────  scheduled background jobs  ─────────┼──────────────────
+   ──────────────────────  background jobs  ──────────────┼──────────────────
                                                           │
      EventBridge ──▶ alert-checker Lambda ────────────────┤
-      (timer)              │                               │
+      (hourly)             │                               │
                            ▼               price-refresh Lambda
                       Amazon SES           (pluggable price source)
                            │
@@ -98,7 +99,36 @@ The site itself is just static files. React gets built once and served from S3 t
 
 Data takes a different path. The browser calls the API directly, which runs a small Python function on Lambda that reads and writes DynamoDB. Login is handled by Firebase. Once you sign in, the browser sends a token with every request, and the function checks that token before it does anything, so you can only ever touch your own data. It never trusts an email or user ID that the browser just hands it. (I had a bug here early on where the API trusted whatever email it got, which meant anyone could read anyone else's saved data. Catching and fixing that was probably the most useful thing I learned on this project.)
 
-The emails run on a timer. EventBridge wakes up a Lambda on a schedule, it checks everyone's alerts against current prices, and sends an email through SES when something has dropped. It marks the alert afterward so you don't get the same email twice. A second Lambda keeps prices fresh, and it's written so I can swap in a different price source later without touching the alert code.
+The emails run on their own now. An EventBridge schedule fires every hour and wakes up a Lambda. That Lambda walks through everyone's saved alerts, looks up the current lowest price for each shoe, and sends an email through SES for anything that has dropped to or below the target. After it sends, it stamps the alert with the price it just notified at, so the same drop never emails you twice. You only hear about a shoe again if the price falls even further. A second Lambda handles price updates. It's built around a pluggable source, so I can wire in a live price feed later without touching the alert code. For now it runs on seeded data.
+
+### How an alert becomes an email
+
+The alert pipeline is the part that runs without anyone touching it. It's a scheduled job, an idempotency check so you don't get spammed, and an email at the end.
+
+```
+   EventBridge schedule          fires every hour, no clicks needed
+          │
+          ▼
+   alert-checker Lambda
+          │
+          ├──▶ read every user's saved alerts      (DynamoDB: users)
+          └──▶ get each shoe's current lowest price (DynamoDB: products)
+          │
+          ▼
+   has the price dropped to or below the target?
+          │ yes
+          ▼
+   already emailed at this price?  ──yes──▶  skip it, no repeat email
+          │ no
+          ▼
+   send the email through SES  ──▶  user's inbox
+          │
+          ▼
+   stamp the alert with the price and time it notified
+   (so it only fires again on a further drop)
+```
+
+The "already emailed at this price" check is the important bit. Without it, the job would email you every single hour for as long as the price stayed low. Stamping each alert after a send makes the whole thing safe to run on repeat, which is exactly what you want from something firing on a schedule.
 
 ### Build and deploy
 
@@ -219,14 +249,13 @@ A few things I made sure to get right:
 - Every user endpoint checks your Firebase token on the server and works out who you are from that, not from anything the browser sends. So you can't read or change anyone else's data.
 - The API only accepts browser calls from the site's own domain.
 - No secret keys in the repo. They live in Lambda environment variables. (The Firebase key in the frontend looks like a secret but isn't. It's a public project ID, and it's locked down with domain restrictions and Firebase rules.)
-- Each Lambda only has the permissions it actually needs.
+- IAM is scoped tight. Each Lambda runs under its own execution role with only the permissions it needs and nothing else. The alert checker, for example, can read the two DynamoDB tables it evaluates and send mail through SES, and that's the whole list. The hourly schedule runs under a separate role whose only job is to invoke that one Lambda.
 
 ---
 
 ## Roadmap
 
 - Live prices from a real source (eBay's API) instead of seeded data
-- Run the alert checker automatically on a schedule
 - Price-history charts so you can see trends, not just the current price
 - Move product images into their own bucket
 - A proper in-app dialog for setting an alert (it's a plain browser prompt right now)
