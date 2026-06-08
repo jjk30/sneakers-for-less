@@ -963,7 +963,7 @@ function App() {
           {profileTab === 'settings' && (
             <div className="settings-section">
               <div className="setting-item"><div><h4>Email Notifications</h4><p>Get notified when prices drop on your alerts</p></div><label className="toggle"><input type="checkbox" checked={emailNotifications} onChange={(e) => updateEmailNotifications(e.target.checked)} /><span className="slider"></span></label></div>
-              <div className="setting-item"><div><h4>Account</h4></div><button className="danger-btn" onClick={handleLogout}>Logout</button></div>
+              <div className="setting-item"><div><h4>Account</h4></div><button className="danger-btn" onClick={handleSignOut} disabled={signingOut}>Logout</button></div>
             </div>
           )}
         </div>
