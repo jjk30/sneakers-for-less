@@ -57,6 +57,11 @@ I built it to get real practice with a full cloud setup, not just a frontend. Si
 ## System design
 
 ```
+                         ┌────────────┐
+                         │    User     │   opens the site
+                         └──────┬──────┘
+                                │
+                                ▼
                          ┌───────────────┐   ID token    ┌──────────────────┐
                          │    Browser     │◀─────────────│   Firebase Auth   │
                          └──┬─────────┬───┘              └──────────────────┘
@@ -84,10 +89,10 @@ I built it to get real practice with a full cloud setup, not just a frontend. Si
                       Amazon SES           (pluggable price source)
                            │
                            ▼
-                     user's inbox
+                     user's inbox   ──▶   reaches the same user
 ```
 
-It's serverless. There are two ways into the system and one database behind them.
+Someone opens the site, and the system takes it from there. It's serverless, with two ways in and one database behind them.
 
 The site itself is just static files. React gets built once and served from S3 through CloudFront, so it loads quickly from anywhere.
 
