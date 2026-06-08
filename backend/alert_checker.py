@@ -44,7 +44,7 @@ USERS_TABLE = "sneakers-for-less-users"
 PRODUCTS_TABLE = "sneakers-for-less-products"
 REGION = "us-east-2"
 
-SITE_BASE = "https://sneakersforless.org"
+SITE_BASE = "https://www.sneakersforless.org"
 UNSUB_URL = f"{SITE_BASE}/?view=account&tab=settings"
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
